@@ -1,0 +1,26 @@
+source: shopee
+batch_id: phase2-electronics-demo
+auth_state_path: data/session/shopee_auth_state.json
+user_data_dir: data/browser/shopee-profile
+session_login_url: https://shopee.vn/
+category: "Đồ điện tử / Phụ kiện điện tử"
+category_urls:
+  - https://shopee.vn/Th%E1%BB%9Di-Trang-Nam-cat.11035567
+  - https://shopee.vn/%C4%90i%E1%BB%87n-Tho%E1%BA%A1i-Ph%E1%BB%A5-Ki%E1%BB%87n-cat.11036030
+
+max_categories: 2
+max_products: 200
+max_products_per_category: 200
+max_pages_per_category: 2
+max_reviews_per_product: 50
+dedupe_across_categories: true
+delay_seconds:
+  min: 2
+  max: 6
+timeout_seconds: 20
+retry_attempts: 3
+user_agents:
+  - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+  - "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
+product_urls:
+  - "https://shopee.vn/product/223789752/5564849127"
