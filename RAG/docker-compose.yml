@@ -1,0 +1,29 @@
+services:
+  vllm_rec:
+    image: vllm/vllm-openai:v0.6.6
+    container_name: vllm_sopi
+    runtime: nvidia
+    restart: unless-stopped
+    environment:
+      # Cài đặt thành 0 hoặc all để dùng 1 GPU duy nhất (thay vì 2,3 như cũ)
+      - NVIDIA_VISIBLE_DEVICES=0
+      - PYTORCH_ALLOC_CONF=expandable_segments:True
+      - HF_HUB_READ_TIMEOUT=60
+      - HF_HUB_ENABLE_HF_TRANSFER=0
+    volumes:
+      - /mnt/disk1/cheetah/vllm_shoppe_cache:/root/.cache/huggingface
+    ports:
+      - "8036:8036"
+    ipc: host
+    command: >
+      --model phamhai/Llama-3.2-3B-Instruct-Frog
+      --served-model-name llama-frog
+      --tensor-parallel-size 1
+      --max-model-len 4096
+      --max-num-seqs 16
+      --gpu-memory-utilization 0.7
+      --enable-prefix-caching
+      --port 8036
+      --host 0.0.0.0
+      --dtype=half
+      --api-key 1234

@@ -1,0 +1,128 @@
+[
+    {
+        "review_id": "rev_001",
+        "product_id": "prod_anker_10k",
+        "user_name": "nguyenvana_99",
+        "rating": 5,
+        "content": "Sản phẩm xài rất ưng ý. Pin sạc nhanh, cầm khá đầm tay. Mình sạc cho iPhone 13 được khoảng hơn 2 lần một chút. Shop giao hàng siêu tốc, đặt hôm trước hôm sau có luôn. Đóng gói kỹ cẩn thận.",
+        "date": "2024-05-01",
+        "helpful_count": 12
+    },
+    {
+        "review_id": "rev_002",
+        "product_id": "prod_anker_10k",
+        "user_name": "hoang_minh_tran",
+        "rating": 4,
+        "content": "Chất lượng Anker thì khỏi bàn rồi, sạc mát máy không bị nóng. Tuy nhiên cục sạc hơi nặng và dày so với mình nghĩ, bỏ túi quần hơi cộm. Cáp tặng kèm theo khá ngắn, hơi bất tiện.",
+        "date": "2024-05-03",
+        "helpful_count": 5
+    },
+    {
+        "review_id": "rev_003",
+        "product_id": "prod_anker_10k",
+        "user_name": "thuha.cute",
+        "rating": 1,
+        "content": "Mới xài đc 1 tuần thì sạc k vô pin nữa, cắm cả đêm mà chỉ nháy đèn. Nhắn tin cho shop đòi bảo hành thì shop seen ko rep. Mọi người né gấp nha, bực mình dễ sợ 😡",
+        "date": "2024-05-05",
+        "helpful_count": 45
+    },
+    {
+        "review_id": "rev_004",
+        "product_id": "prod_anker_10k",
+        "user_name": "hieu.tech",
+        "rating": 3,
+        "content": "Giá rẻ lúc săn sale nhưng tốc độ sạc bình thường, ko hỗ trợ sạc siêu nhanh 20W cho mấy dòng máy đời mới đâu nha. Dùng tạm chữa cháy thì ok, tiền nào của nấy thôi.",
+        "date": "2024-04-28",
+        "helpful_count": 8
+    },
+    {
+        "review_id": "rev_005",
+        "product_id": "prod_anker_10k",
+        "user_name": "linh_lan_9x",
+        "rating": 5,
+        "content": "Giao hàng nhanh, shipper thân thiện. Hàng nguyên seal chĩnh hãng. Mới dùng thử thấy ok chưa biết độ bền sao nhưng cho shop 5 sao ủng hộ. sp tốt mn nên mua",
+        "date": "2024-05-06",
+        "helpful_count": 0
+    },
+    {
+        "review_id": "rev_006",
+        "product_id": "prod_sony_wh1000xm4",
+        "user_name": "audiophile_vn",
+        "rating": 5,
+        "content": "Tai nghe chống ồn cực tốt, đeo lâu không bị đau tai. Chất âm thiên bass nhưng vẫn rất chi tiết. Kết nối bluetooth ổn định, pin trâu.",
+        "date": "2024-05-10",
+        "helpful_count": 25
+    },
+    {
+        "review_id": "rev_007",
+        "product_id": "prod_sony_wh1000xm4",
+        "user_name": "gamer_chua",
+        "rating": 4,
+        "content": "Chất lượng âm thanh tuyệt vời, nhưng mic đàm thoại hơi kém nếu ở ngoài đường ồn ào. Giá hơi cao xíu nhưng đáng tiền.",
+        "date": "2024-05-11",
+        "helpful_count": 10
+    },
+    {
+        "review_id": "rev_008",
+        "product_id": "prod_logitech_mx_master_3s",
+        "user_name": "coder_pro_99",
+        "rating": 5,
+        "content": "Chuột đỉnh nhất cho dân văn phòng và coder. Nút bấm êm, cuộn siêu nhanh. Cầm vừa tay, làm việc cả ngày không bị mỏi cổ tay.",
+        "date": "2024-05-08",
+        "helpful_count": 50
+    },
+    {
+        "review_id": "rev_009",
+        "product_id": "prod_logitech_mx_master_3s",
+        "user_name": "design_master",
+        "rating": 3,
+        "content": "Chuột to và nặng, tay bạn nữ hoặc tay nhỏ xài sẽ thấy mỏi. Chuột hay bị mất kết nối bluetooth với máy Mac, phải dùng receiver mới ổn.",
+        "date": "2024-05-09",
+        "helpful_count": 15
+    },
+    {
+        "review_id": "rev_010",
+        "product_id": "prod_samsung_ssd_1tb",
+        "user_name": "pc_builder_vn",
+        "rating": 5,
+        "content": "Tốc độ đọc ghi nhanh khủng khiếp. Copy file mấy chục GB vèo cái là xong. Samsung thì bền khỏi bàn rồi.",
+        "date": "2024-05-12",
+        "helpful_count": 8
+    },
+    {
+        "review_id": "rev_011",
+        "product_id": "prod_iphone_15_pro",
+        "user_name": "ifan_chinhhieu",
+        "rating": 5,
+        "content": "Máy thiết kế đẹp, viền titan nhẹ và cầm đã tay hơn bản cũ. Camera chụp đêm xuất sắc. Máy hơi ấm khi chơi game nặng nhưng chấp nhận được.",
+        "date": "2024-05-13",
+        "helpful_count": 120
+    },
+    {
+        "review_id": "rev_012",
+        "product_id": "prod_iphone_15_pro",
+        "user_name": "tech_reviewer",
+        "rating": 4,
+        "content": "Màn hình 120Hz mượt mà, nhưng pin có vẻ tụt hơi nhanh so với 14 Pro. Điểm cộng là đã đổi sang cổng Type-C rất tiện lợi.",
+        "date": "2024-05-13",
+        "helpful_count": 45
+    },
+    {
+        "review_id": "rev_013",
+        "product_id": "prod_dell_ultrasharp_27",
+        "user_name": "designer_uiux",
+        "rating": 5,
+        "content": "Màn hình màu sắc chuẩn xác, rất thích hợp cho dân thiết kế. Viền mỏng, chân đế xoay lật linh hoạt. Hub USB-C tích hợp sạc luôn cho laptop rất gọn bàn làm việc.",
+        "date": "2024-05-05",
+        "helpful_count": 32
+    },
+    {
+        "review_id": "rev_014",
+        "product_id": "prod_dell_ultrasharp_27",
+        "user_name": "office_worker",
+        "rating": 4,
+        "content": "Đẹp thì có đẹp nhưng giá khá chát so với mặt bằng chung. Lâu lâu bị hở sáng nhẹ ở các góc màn hình, màn IPS nào cũng bị nên đành chịu.",
+        "date": "2024-05-07",
+        "helpful_count": 7
+    }
+]
