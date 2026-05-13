@@ -1,12 +1,13 @@
 # ShopeeFeed
 
-ShopeeFeed is a review-based RAG demo for crawling e-commerce product reviews, cleaning the dataset, and preparing product/review evidence for later embedding, retrieval, reranking, and answer generation.
+ShopeeFeed is a review-based RAG demo for crawling Shopee product reviews, cleaning the dataset, and preparing product/review evidence for later embedding, retrieval, reranking, and answer generation.
 
-The repository currently contains:
+The repository contains:
 
 - React/Vite front end demo for product review QA.
 - Python crawler pipeline for Shopee product metadata and reviews.
-- Phase 2 category crawler with Playwright network discovery and Shopee session support.
+- Seed-category crawler for Shopee product/review collection from real product URLs.
+- Category-page discovery crawler that requires a logged-in Shopee browser session.
 
 ## Quick Start
 
@@ -30,16 +31,66 @@ pip install -r requirements-crawler.txt
 python -m playwright install chromium
 ```
 
-Run the offline sample pipeline:
+## Recommended Shopee Workflow
 
-```bash
-python -m crawler.cli sample-data
-python -m crawler.cli preprocess-reviews
-python -m crawler.cli validate-dataset
-python -m crawler.cli phase1-report
+Paste real Shopee product URLs under each category in `configs/crawl.example.yaml`, then crawl those products and reviews.
+
+```yaml
+categories:
+  - category_name: "Điện Thoại & Phụ Kiện"
+    category_url: ""
+    product_urls:
+      - "https://shopee.vn/product/313873802/19259739210"
 ```
 
-## Shopee Product Crawl
+Run:
+
+```bash
+python -m crawler.cli crawl-seed-categories --config configs/crawl.example.yaml
+python -m crawler.cli preprocess-reviews
+python -m crawler.cli validate-dataset
+```
+
+This keeps category metadata on every product and review without depending on Shopee category listing APIs.
+
+## Category Page Discovery
+
+Category discovery opens real Shopee category pages with Playwright and reuses a logged-in browser profile. Log in before running discovery; without a fresh session, Shopee commonly returns `403` or renders the page without product URLs.
+
+Create or refresh the Shopee session:
+
+```bash
+python -m crawler.cli open-shopee-session --config configs/crawl.example.yaml
+```
+
+Log in inside the opened browser, return to the terminal, then press `Enter`. The session profile is stored in `data/browser/shopee-profile`, which is ignored by git.
+
+Add category URLs to `configs/crawl.example.yaml`:
+
+```yaml
+categories:
+  - category_name: "Balo & Túi Ví Nam"
+    category_url: "https://shopee.vn/Balo-T%C3%BAi-V%C3%AD-Nam-cat.11035741"
+    product_urls: []
+```
+
+Discover product URLs only:
+
+```bash
+python -m crawler.cli discover-categories --config configs/crawl.example.yaml
+```
+
+Discover category product URLs, then crawl product metadata and reviews:
+
+```bash
+python -m crawler.cli crawl-category-discovery --config configs/crawl.example.yaml
+python -m crawler.cli preprocess-reviews
+python -m crawler.cli validate-dataset
+```
+
+Discovery is controlled by `max_categories`, `max_products_per_category`, and `max_pages_per_category`.
+
+## Direct Product Crawl
 
 Add product URLs to `configs/crawl.example.yaml`, then run:
 
@@ -48,39 +99,9 @@ python -m crawler.cli crawl-products --config configs/crawl.example.yaml
 python -m crawler.cli crawl-reviews --config configs/crawl.example.yaml
 python -m crawler.cli preprocess-reviews
 python -m crawler.cli validate-dataset
-python -m crawler.cli phase1-report
 ```
 
-If Shopee blocks direct API calls, the product crawler falls back to rendering the product page with Playwright and capturing the browser's `api/v4/pdp/get_pc` response.
-
-## Shopee Category Crawl
-
-Add category URLs to `configs/crawl.example.yaml`.
-
-Create a Shopee browser session first:
-
-```bash
-python -m crawler.cli save-shopee-session --config configs/crawl.example.yaml
-```
-
-This opens Chromium. Log in to Shopee in the opened browser, then return to the terminal and press `Enter`. The session is stored under `data/session/` and `data/browser/`, both ignored by git.
-
-Check whether category discovery can see product URLs:
-
-```bash
-python -m crawler.cli debug-category --config configs/crawl.example.yaml
-```
-
-Run category crawl:
-
-```bash
-python -m crawler.cli crawl-phase2 --config configs/crawl.example.yaml
-python -m crawler.cli preprocess-reviews
-python -m crawler.cli validate-dataset
-python -m crawler.cli phase1-report
-```
-
-Shopee may still return `403` for listing APIs. In that case, use `product_urls` seeds in the config.
+If Shopee blocks direct API calls, the product crawler falls back to rendering the product page with Playwright and using the browser context for the product/review API calls.
 
 ## Outputs
 
@@ -88,12 +109,12 @@ Generated crawl outputs are ignored by git:
 
 - `data/raw/shopee/products/*.json`
 - `data/raw/shopee/reviews/*.jsonl`
+- `data/processed/categories.csv`
 - `data/processed/products.csv`
 - `data/processed/reviews.csv`
 - `data/processed/reviews_clean.csv`
-- `data/reports/phase1_report.json`
 
-Tracked placeholders keep the folder structure available without committing raw data, browser profiles, cookies, or reports.
+Tracked placeholders keep the folder structure available without committing raw data, browser profiles, or cookies.
 
 ## Dataset Contract
 
@@ -104,4 +125,3 @@ Product fields:
 Clean review fields:
 
 `review_id`, `product_id`, `text`, `text_normalized`, `rating`, `sentiment`, `created_at`, `source`, `category_id`, `category`, `category_url`, `crawl_batch_id`, `variant`, `helpful_count`, `media_count`, `review_url`, `crawl_time`, `raw_file`, `clean_status`, `dedupe_key`, `document_text`
-

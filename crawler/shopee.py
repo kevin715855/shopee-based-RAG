@@ -8,7 +8,7 @@ from typing import Any
 
 import requests
 
-from .browser import fetch_json_with_browser_context, fetch_product_api_by_rendering_page
+from .browser import fetch_json_from_product_page, fetch_json_with_browser_context, fetch_product_api_by_rendering_page
 from .config import CrawlConfig
 from .schemas import ProductRecord, ReviewRecord
 from .utils import append_jsonl, ensure_dir, sleep_random, write_json
@@ -82,6 +82,23 @@ class ShopeeCrawler:
                         f"browser fallback failed: {browser_error}; "
                         f"render fallback failed: {render_error}",
                     ) from render_error
+            if "item/get_ratings" in url:
+                try:
+                    product_url = f"https://shopee.vn/product/{params['shopid']}/{params['itemid']}"
+                    return fetch_json_from_product_page(
+                        product_url,
+                        url,
+                        params,
+                        timeout_ms=self.config.timeout_seconds * 1000,
+                        auth_state_path=self.config.auth_state_path,
+                        user_data_dir=self.config.user_data_dir,
+                    )
+                except Exception as page_fetch_error:  # noqa: BLE001
+                    raise RuntimeError(
+                        f"Shopee request failed after retries: {last_error}; "
+                        f"browser fallback failed: {browser_error}; "
+                        f"page fetch fallback failed: {page_fetch_error}",
+                    ) from page_fetch_error
             raise RuntimeError(
                 f"Shopee request failed after retries: {last_error}; "
                 f"browser fallback failed: {browser_error}",

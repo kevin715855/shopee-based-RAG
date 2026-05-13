@@ -3,10 +3,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
-SourceName = Literal["shopee", "tiki"]
+SourceName = Literal["shopee"]
 Sentiment = Literal["negative", "neutral", "positive"]
 
 

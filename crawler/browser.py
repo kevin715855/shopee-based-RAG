@@ -6,13 +6,10 @@ from typing import Any
 import re
 from urllib.parse import quote, urlencode, urljoin, urlsplit, urlunsplit
 
-from bs4 import BeautifulSoup
-
 
 @dataclass(slots=True)
 class CategoryDiscoveryResult:
     html: str = ""
-    title: str = ""
     network_product_urls: list[str] = field(default_factory=list)
     html_product_urls: list[str] = field(default_factory=list)
     api_statuses: dict[str, int] = field(default_factory=dict)
@@ -30,129 +27,10 @@ DEFAULT_USER_AGENT = (
 )
 
 
-def render_html(
-    url: str,
-    timeout_ms: int = 20000,
-    wait_until: str = "domcontentloaded",
-    auth_state_path: str | None = None,
-    user_data_dir: str | None = None,
-) -> str:
-    try:
-        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-        from playwright.sync_api import sync_playwright
-    except ImportError as exc:
-        raise RuntimeError(
-            "Playwright is not installed. Run `pip install -r requirements-crawler.txt` "
-            "and `python -m playwright install chromium`.",
-        ) from exc
-
-    normalized_url = normalize_url_for_browser(url)
-    with sync_playwright() as playwright:
-        context, browser = _open_context(
-            playwright,
-            headless=True,
-            auth_state_path=auth_state_path,
-            user_data_dir=user_data_dir,
-        )
-        page = context.new_page()
-        page.route(
-            "**/*",
-            lambda route: route.abort()
-            if route.request.resource_type in {"image", "media", "font"}
-            else route.continue_(),
-        )
-        try:
-            page.goto(normalized_url, wait_until=wait_until, timeout=timeout_ms)
-            page.wait_for_timeout(2500)
-        except PlaywrightTimeoutError:
-            # Shopee often keeps network connections open. The partial DOM is still useful.
-            pass
-        html = page.content()
-        context.close()
-        if browser is not None:
-            browser.close()
-        return html
-
-
-def discover_category_products(
-    url: str,
-    timeout_ms: int = 20000,
-    max_scrolls: int = 2,
-    max_products: int = 20,
-    auth_state_path: str | None = None,
-    user_data_dir: str | None = None,
-) -> CategoryDiscoveryResult:
-    try:
-        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-        from playwright.sync_api import sync_playwright
-    except ImportError as exc:
-        raise RuntimeError(
-            "Playwright is not installed. Run `pip install -r requirements-crawler.txt` "
-            "and `python -m playwright install chromium`.",
-        ) from exc
-
-    normalized_url = normalize_url_for_browser(url)
-    result = CategoryDiscoveryResult()
-    network_urls: set[str] = set()
-
-    with sync_playwright() as playwright:
-        context, browser = _open_context(
-            playwright,
-            headless=True,
-            auth_state_path=auth_state_path,
-            user_data_dir=user_data_dir,
-        )
-        page = context.new_page()
-        page.route(
-            "**/*",
-            lambda route: route.abort()
-            if route.request.resource_type in {"image", "media", "font"}
-            else route.continue_(),
-        )
-
-        def on_response(response: Any) -> None:
-            response_url = response.url
-            if not _is_relevant_shopee_response(response_url):
-                return
-            result.api_statuses[response_url] = response.status
-            if response.status in {401, 403, 429}:
-                result.blocked_responses.append(response_url)
-            try:
-                payload = response.json()
-            except Exception:  # noqa: BLE001 - non-JSON responses are expected on Shopee pages
-                return
-            for product_url in extract_product_urls_from_payload(payload):
-                network_urls.add(product_url)
-
-        page.on("response", on_response)
-        try:
-            page.goto(normalized_url, wait_until="domcontentloaded", timeout=timeout_ms)
-            page.wait_for_timeout(2500)
-        except PlaywrightTimeoutError:
-            pass
-
-        for _ in range(max(0, max_scrolls)):
-            if len(network_urls) >= max_products:
-                break
-            page.mouse.wheel(0, 1400)
-            page.wait_for_timeout(1500)
-
-        result.html = page.content()
-        context.close()
-        if browser is not None:
-            browser.close()
-
-    result.title = parse_title_from_html(result.html)
-    result.html_product_urls = extract_product_urls_from_html(result.html)[:max_products]
-    result.network_product_urls = sorted(network_urls)[:max_products]
-    return result
-
-
-def save_shopee_session(
-    login_url: str,
-    auth_state_path: str,
-    user_data_dir: str,
-    timeout_ms: int = 120000,
+def open_shopee_session(
+    login_url: str = "https://shopee.vn/",
+    user_data_dir: str = "data/browser/shopee-profile",
+    timeout_ms: int = 60000,
 ) -> None:
     try:
         from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -163,7 +41,6 @@ def save_shopee_session(
             "and `python -m playwright install chromium`.",
         ) from exc
 
-    Path(auth_state_path).parent.mkdir(parents=True, exist_ok=True)
     Path(user_data_dir).mkdir(parents=True, exist_ok=True)
     with sync_playwright() as playwright:
         context = playwright.chromium.launch_persistent_context(
@@ -179,10 +56,72 @@ def save_shopee_session(
             page.goto(normalize_url_for_browser(login_url), wait_until="domcontentloaded", timeout=timeout_ms)
         except PlaywrightTimeoutError:
             pass
-        print("Login Shopee in the opened browser window, then return here and press Enter.")
-        input()
-        context.storage_state(path=auth_state_path)
+        input("Dang nhap Shopee trong browser vua mo, sau do quay lai terminal va nhan Enter...")
         context.close()
+
+
+def discover_category_products(
+    url: str,
+    timeout_ms: int = 30000,
+    max_scrolls: int = 8,
+    max_products: int = 10,
+    user_data_dir: str | None = None,
+) -> CategoryDiscoveryResult:
+    try:
+        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+        from playwright.sync_api import sync_playwright
+    except ImportError as exc:
+        raise RuntimeError(
+            "Playwright is not installed. Run `pip install -r requirements-crawler.txt` "
+            "and `python -m playwright install chromium`.",
+        ) from exc
+
+    result = CategoryDiscoveryResult()
+    network_urls: set[str] = set()
+    html_urls: set[str] = set()
+    with sync_playwright() as playwright:
+        context, browser = _open_context(
+            playwright,
+            headless=True,
+            auth_state_path=None,
+            user_data_dir=user_data_dir,
+        )
+        page = context.new_page()
+
+        def on_response(response: Any) -> None:
+            response_url = response.url
+            if not _is_relevant_category_response(response_url):
+                return
+            result.api_statuses[response_url.split("?", 1)[0]] = response.status
+            if response.status in {401, 403, 429}:
+                result.blocked_responses.append(response_url[:260])
+            try:
+                payload = response.json()
+            except Exception:
+                return
+            network_urls.update(extract_product_urls_from_payload(payload))
+
+        page.on("response", on_response)
+        try:
+            page.goto(normalize_url_for_browser(url), wait_until="domcontentloaded", timeout=timeout_ms)
+        except PlaywrightTimeoutError:
+            pass
+        page.wait_for_timeout(4500)
+        for _ in range(max(0, max_scrolls)):
+            if len(network_urls | html_urls) >= max_products:
+                break
+            page.mouse.wheel(0, 1700)
+            page.wait_for_timeout(1600)
+            html_urls.update(extract_product_urls_from_html(page.content()))
+        result.html = page.content()
+        html_urls.update(extract_product_urls_from_html(result.html))
+        context.close()
+        if browser is not None:
+            browser.close()
+
+    result.network_product_urls = sorted(network_urls)[:max_products]
+    result.html_product_urls = sorted(html_urls)[:max_products]
+    return result
 
 
 def fetch_json_with_browser_context(
@@ -279,11 +218,87 @@ def fetch_product_api_by_rendering_page(
     return payloads[0]
 
 
+def fetch_json_from_product_page(
+    product_url: str,
+    api_url: str,
+    params: dict[str, Any],
+    timeout_ms: int = 30000,
+    auth_state_path: str | None = None,
+    user_data_dir: str | None = None,
+) -> Any:
+    try:
+        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+        from playwright.sync_api import sync_playwright
+    except ImportError as exc:
+        raise RuntimeError(
+            "Playwright is not installed. Run `pip install -r requirements-crawler.txt` "
+            "and `python -m playwright install chromium`.",
+        ) from exc
+
+    query = urlencode(params)
+    path = urlsplit(api_url).path
+    target = f"{path}?{query}" if query else path
+    with sync_playwright() as playwright:
+        context, browser = _open_context(
+            playwright,
+            headless=True,
+            auth_state_path=auth_state_path,
+            user_data_dir=user_data_dir,
+        )
+        page = context.new_page()
+        try:
+            page.goto(normalize_url_for_browser(product_url), wait_until="domcontentloaded", timeout=timeout_ms)
+        except PlaywrightTimeoutError:
+            pass
+        page.wait_for_timeout(3000)
+        payload = page.evaluate(
+            """async (target) => {
+                const response = await fetch(target, {
+                    headers: {accept: 'application/json'},
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return await response.json();
+            }""",
+            target,
+        )
+        context.close()
+        if browser is not None:
+            browser.close()
+        return payload
+
+
 def normalize_url_for_browser(url: str) -> str:
     parts = urlsplit(url.strip())
     path = quote(parts.path, safe="/%.-_~")
     query = quote(parts.query, safe="=&?/%.-_~:+")
     return urlunsplit((parts.scheme, parts.netloc, path, query, parts.fragment))
+
+
+def extract_product_urls_from_payload(payload: Any) -> list[str]:
+    urls: set[str] = set()
+    for item in _walk_dicts(payload):
+        candidate = item.get("item_basic") if isinstance(item.get("item_basic"), dict) else item
+        shop_id = candidate.get("shopid") or candidate.get("shop_id")
+        item_id = candidate.get("itemid") or candidate.get("item_id")
+        if shop_id and item_id:
+            urls.add(f"https://shopee.vn/product/{shop_id}/{item_id}")
+    return sorted(urls)
+
+
+def extract_product_urls_from_html(html: str) -> list[str]:
+    urls: set[str] = set()
+    patterns = [
+        r"https?://(?:[a-z0-9-]+\.)?shopee\.vn/[^\"'\\s<>]+?-i\.\d+\.\d+(?:\?[^\"'\\s<>]+)?",
+        r"/(?:[^\"'\\s<>]+)-i\.\d+\.\d+(?:\?[^\"'\\s<>]+)?",
+    ]
+    for pattern in patterns:
+        for match in re.findall(pattern, html, flags=re.I):
+            cleaned = match.split("#", 1)[0]
+            urls.add(urljoin("https://shopee.vn", cleaned) if cleaned.startswith("/") else cleaned)
+    return sorted(urls)
 
 
 def _open_context(
@@ -318,40 +333,6 @@ def _open_context(
     return context, browser
 
 
-def parse_title_from_html(html: str) -> str:
-    soup = BeautifulSoup(html, "html.parser")
-    title = soup.find("title")
-    return title.get_text(strip=True) if title else ""
-
-
-def extract_product_urls_from_html(html: str, base_url: str = "https://shopee.vn") -> list[str]:
-    soup = BeautifulSoup(html, "html.parser")
-    urls: set[str] = set()
-    for tag in soup.find_all("a", href=True):
-        href = str(tag["href"])
-        if "shopee.vn" in href and "-i." in href:
-            urls.add(_normalize_shopee_url(href, base_url))
-        elif href.startswith("/"):
-            joined = urljoin(base_url, href)
-            if "-i." in joined:
-                urls.add(_normalize_shopee_url(joined, base_url))
-
-    for match in re.findall(r"https?://(?:[a-z0-9-]+\.)?shopee\.vn/[^\"'\\s<>]+?-i\.\d+\.\d+(?:\?[^\"'\\s<>]+)?", html, flags=re.I):
-        urls.add(_normalize_shopee_url(match, base_url))
-    return sorted(urls)
-
-
-def extract_product_urls_from_payload(payload: Any) -> list[str]:
-    urls: set[str] = set()
-    for item in _walk_dicts(payload):
-        candidate = item.get("item_basic") if isinstance(item.get("item_basic"), dict) else item
-        shop_id = candidate.get("shopid") or candidate.get("shop_id")
-        item_id = candidate.get("itemid") or candidate.get("item_id")
-        if shop_id and item_id:
-            urls.add(f"https://shopee.vn/product/{shop_id}/{item_id}")
-    return sorted(urls)
-
-
 def _walk_dicts(value: Any) -> list[dict[str, Any]]:
     dicts: list[dict[str, Any]] = []
     if isinstance(value, dict):
@@ -364,7 +345,7 @@ def _walk_dicts(value: Any) -> list[dict[str, Any]]:
     return dicts
 
 
-def _is_relevant_shopee_response(url: str) -> bool:
+def _is_relevant_category_response(url: str) -> bool:
     if "shopee.vn/api/" not in url:
         return False
     tokens = (
@@ -374,10 +355,6 @@ def _is_relevant_shopee_response(url: str) -> bool:
         "item",
         "collection",
         "homepage",
+        "daily_discover",
     )
     return any(token in url for token in tokens)
-
-
-def _normalize_shopee_url(url: str, base_url: str) -> str:
-    cleaned = url.split("#", 1)[0]
-    return cleaned if cleaned.startswith("http") else urljoin(base_url, cleaned)

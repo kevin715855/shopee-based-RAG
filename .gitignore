@@ -25,6 +25,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
+AmazonFeed/
 data/state/**
 !data/state/.gitkeep
 data/session/**
@@ -35,14 +36,12 @@ data/browser/**
 # Crawl outputs
 data/raw/**
 data/processed/**
-data/reports/**
 !data/raw/.gitkeep
 !data/raw/shopee/.gitkeep
 !data/raw/shopee/categories/.gitkeep
 !data/raw/shopee/products/.gitkeep
 !data/raw/shopee/reviews/.gitkeep
 !data/processed/.gitkeep
-!data/reports/.gitkeep
 
 # Editor directories and files
 .vscode/*

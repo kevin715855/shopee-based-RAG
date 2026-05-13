@@ -1,26 +1,106 @@
 source: shopee
-batch_id: phase2-electronics-demo
-auth_state_path: data/session/shopee_auth_state.json
-user_data_dir: data/browser/shopee-profile
-session_login_url: https://shopee.vn/
-category: "Đồ điện tử / Phụ kiện điện tử"
-category_urls:
-  - https://shopee.vn/Th%E1%BB%9Di-Trang-Nam-cat.11035567
-  - https://shopee.vn/%C4%90i%E1%BB%87n-Tho%E1%BA%A1i-Ph%E1%BB%A5-Ki%E1%BB%87n-cat.11036030
+batch_id: phase2-seed-categories
 
-max_categories: 2
+max_categories: 30
 max_products: 200
-max_products_per_category: 200
-max_pages_per_category: 2
+max_products_per_category: 20
+max_pages_per_category: 8
 max_reviews_per_product: 50
 dedupe_across_categories: true
+
 delay_seconds:
   min: 2
   max: 6
+
 timeout_seconds: 20
 retry_attempts: 3
+
 user_agents:
   - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
   - "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
-product_urls:
-  - "https://shopee.vn/product/223789752/5564849127"
+
+categories:
+  - category_name: "Balo & Túi Ví Nam"
+    category_url: "https://shopee.vn/Balo-T%C3%BAi-V%C3%AD-Nam-cat.11035741"
+    product_urls: ["https://shopee.vn/V%C3%AD-Nam-D%C3%A1ng-Ngang-Ch%E1%BA%A5t-Canvas-Hazo-Wallet-B%E1%BB%81n-B%E1%BB%89-M%E1%BB%81m-Nh%E1%BB%8F-G%E1%BB%8Dn-Nhi%E1%BB%81u-Ng%C4%83n-576-Cao-C%E1%BA%A5p-C%E1%BB%B1c-%C4%90%E1%BA%B9p-Hazo-i.10323148.18849065465?extraParams=%7B%22display_model_id%22%3A29503652276%2C%22model_selection_logic%22%3A3%7D&sp_atk=df91d757-b104-4e78-82e5-70eecdef477b&xptdk=df91d757-b104-4e78-82e5-70eecdef477b"]
+  - category_name: "Bách Hóa Online"
+    category_url: "https://shopee.vn/B%C3%A1ch-H%C3%B3a-Online-cat.11036525"
+    product_urls: ["https://shopee.vn/N%E1%BB%93ng-%C4%90%E1%BB%99-C%E1%BB%93n-4.3-Th%C3%B9ng-24-Lon-Bia-Saigon-Lager-330ml-i.1102893452.23559569495?extraParams=%7B%22display_model_id%22%3A232204870259%2C%22model_selection_logic%22%3A3%7D"]
+  - category_name: "Chăm Sóc Thú Cưng"
+    category_url: "https://shopee.vn/Ch%C4%83m-S%C3%B3c-Th%C3%BA-C%C6%B0ng-cat.11036478"
+    product_urls: ["https://shopee.vn/Th%E1%BB%A9c-%C4%82n-tr%E1%BB%99n-C%C6%A0-B%E1%BA%A2N-Bachphienpets-Hamster................-i.297981379.22645770467?extraParams=%7B%22display_model_id%22%3A175947528864%2C%22model_selection_logic%22%3A3%7D"]
+  - category_name: "Dụng cụ và thiết bị tiện ích"
+    category_url: "https://shopee.vn/D%E1%BB%A5ng-c%E1%BB%A5-v%C3%A0-thi%E1%BA%BFt-b%E1%BB%8B-ti%E1%BB%87n-%C3%ADch-cat.11116484"
+    product_urls: ["https://shopee.vn/M%E1%BB%8F-h%C3%A0n-thi%E1%BA%BFc-%C4%91i%E1%BB%81u-ch%E1%BB%89nh-nhi%E1%BB%87t-%C4%91%E1%BB%99-M%E1%BB%8F-h%C3%A0n-TQ936-60w-220v-v%C3%A0-ph%E1%BB%A5-ki%E1%BB%87n-h%C3%A0n-thi%E1%BA%BFc-h%C3%A0n-b%E1%BB%99-m%C5%A9i-h%C3%A0n-k%E1%BB%87-h%C3%A0n-i.27117857.11183130058?extraParams=%7B%22display_model_id%22%3A115029812334%2C%22model_selection_logic%22%3A3%7D"]
+  - category_name: "Giày Dép Nam"
+    category_url: "https://shopee.vn/Gi%C3%A0y-D%C3%A9p-Nam-cat.11035801"
+    product_urls: ["https://shopee.vn/D%C3%A9p-quai-ngang-MCM-th%E1%BB%9Di-trang-nam-cao-c%E1%BA%A5p-D%C3%A9p-l%C3%AA-nam-MCM-ch%E1%BA%A5t-da-si%C3%AAu-b%E1%BB%81n-%C4%91%E1%BA%BF-PU-ch%E1%BB%91ng-tr%C6%A1n-tr%C6%B0%E1%BB%A3t-i.537680446.28157957306?extraParams=%7B%22display_model_id%22%3A440771246045%2C%22model_selection_logic%22%3A3%7D"]
+  - category_name: "Giày Dép Nữ"
+    category_url: "https://shopee.vn/Gi%C3%A0y-D%C3%A9p-N%E1%BB%AF-cat.11035825"
+    product_urls: ["https://shopee.vn/(FULLBOX)-Gi%C3%A0y-th%E1%BB%83-thao-n%E1%BB%AF-Smaba-%C4%90%E1%BA%BF-5cm-Ki%E1%BB%83u-d%C3%A1ng-H%E1%BB%8Dc-Sinh-i.72620972.19882485079?extraParams=%7B%22display_model_id%22%3A194536520057%2C%22model_selection_logic%22%3A3%7D"]
+  - category_name: "Giặt Giũ & Chăm Sóc Nhà Cửa"
+    category_url: "https://shopee.vn/Gi%E1%BA%B7t-Gi%C5%A9-Ch%C4%83m-S%C3%B3c-Nh%C3%A0-C%E1%BB%ADa-cat.11036624"
+    product_urls: ["https://shopee.vn/SET-3-CU%E1%BB%98N-T%C3%9AI-%C4%90%E1%BB%B0NG-R%C3%81C-T%E1%BB%B0-PH%C3%82N-H%E1%BB%A6Y-SINH-55x65-cm-i.1205484883.24819102380?extraParams=%7B%22display_model_id%22%3A222788043619%2C%22model_selection_logic%22%3A3%7D"]
+  - category_name: "Máy Tính & Laptop"
+    category_url: ""
+    product_urls: ["https://shopee.vn/Chu%E1%BB%99t-kh%C3%B4ng-d%C3%A2y-VXE-R1-SE-R1-SE-Plus-3-ch%E1%BA%BF-%C4%91%E1%BB%99-k%E1%BA%BFt-n%E1%BB%91i-Chu%E1%BB%99t-gaming-gi%C3%A1-r%E1%BA%BB-d%C3%B9ng-cho-PC-laptop-i.232780266.24854507723?extraParams=%7B%22display_model_id%22%3A59877964161%2C%22model_selection_logic%22%3A3%7D"]
+  - category_name: "Máy Ảnh & Máy Quay Phim"
+    category_url: ""
+    product_urls: []
+  - category_name: "Mẹ & Bé"
+    category_url: ""
+    product_urls: []
+  - category_name: "Nhà Cửa & Đời Sống"
+    category_url: ""
+    product_urls: []
+  - category_name: "Nhà Sách Online"
+    category_url: ""
+    product_urls: []
+  - category_name: "Phụ Kiện & Trang Sức Nữ"
+    category_url: ""
+    product_urls: []
+  - category_name: "Sắc Đẹp"
+    category_url: ""
+    product_urls: []
+  - category_name: "Sức Khỏe"
+    category_url: ""
+    product_urls: []
+  - category_name: "Thiết Bị Điện Gia Dụng"
+    category_url: ""
+    product_urls: []
+  - category_name: "Thiết Bị Điện Tử"
+    category_url: ""
+    product_urls: []
+  - category_name: "Thể Thao & Du Lịch"
+    category_url: ""
+    product_urls: []
+  - category_name: "Thời Trang Nam"
+    category_url: ""
+    product_urls: []
+  - category_name: "Thời Trang Nữ"
+    category_url: ""
+    product_urls: []
+  - category_name: "Thời Trang Trẻ Em"
+    category_url: ""
+    product_urls: []
+  - category_name: "Túi Ví Nữ"
+    category_url: ""
+    product_urls: []
+  - category_name: "Voucher & Dịch Vụ"
+    category_url: ""
+    product_urls: []
+  - category_name: "Ô Tô & Xe Máy & Xe Đạp"
+    category_url: ""
+    product_urls: []
+  - category_name: "Điện Thoại & Phụ Kiện"
+    category_url: ""
+    product_urls: []
+  - category_name: "Đồ Chơi"
+    category_url: ""
+    product_urls: []
+  - category_name: "Đồng Hồ"
+    category_url: ""
+    product_urls: []
+
+category: "Đồ điện tử / Phụ kiện điện tử"
+product_urls: []
