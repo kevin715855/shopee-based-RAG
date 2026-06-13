@@ -6,6 +6,8 @@ Modes:
     python main.py --mode index --file data/reviews.json
     python main.py --mode ask --question "Pin có bền không?"
     python main.py --mode ask --question "Giao hàng có nhanh không?" --product "Anker 10000mAh"
+    python main.py --mode ask --question "Giao hàng có nhanh không?" --product "Anker 10000mAh" --category "Bách Hóa Online"
+
     python main.py --mode demo                          # Chạy 5 câu hỏi mẫu tự động
 
 Yêu cầu:
@@ -46,6 +48,7 @@ def run_ask(
     question:     str,
     product_name: str = "Sản phẩm",
     product_id:   int = 0,
+    category:     str = "",
 ) -> dict:
     """Hỏi một câu hỏi tự do về sản phẩm dựa trên reviews."""
     from rag_pipeline import get_qa_chain
@@ -58,6 +61,7 @@ def run_ask(
         question     = question,
         product_id   = product_id,
         product_name = product_name,
+        category = category,
     )
 
     _print_qa_result(result)
@@ -177,6 +181,13 @@ Ví dụ:
         default="Sản phẩm",
         help="Tên sản phẩm (dùng trong prompt, default: Sản phẩm)",
     )
+
+    parser.add_argument(
+        "--category",
+        default="",
+        help="Tên category để lọc ngữ cảnh khi hỏi, ví dụ: Bách Hóa Online",
+    )
+
     parser.add_argument(
         "--product-id",
         type=int,
@@ -193,6 +204,7 @@ Ví dụ:
             question     = args.question,
             product_name = args.product,
             product_id   = args.product_id,
+            category     = args.category,
         )
     elif args.mode == "demo":
         run_demo(product_name=args.product)
