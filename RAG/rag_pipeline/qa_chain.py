@@ -123,7 +123,11 @@ class ReviewQAChain:
 
         if best_score < RELEVANCE_THRESHOLD:
             logger.warning(f"[Q&A] Câu hỏi không liên quan (score={best_score:.4f}): '{question}'")
-            return self._irrelevant_question_response(question, product_name)
+            return self._irrelevant_question_response(
+                question, product_name,
+                candidates_retrieved=len(candidates),
+                best_rerank_score=best_score,   # ✅ Fix: truyền score thực tế
+            )
 
         # Step 3: LLM trả lời
         chain_input = {
@@ -159,21 +163,43 @@ class ReviewQAChain:
 
     async def aask(
         self,
-        question:     str,
-        product_id:   int = 0,
-        product_name: str = "Sản phẩm",
+        question:          str,
+        product_id:        int           = 0,
+        product_name:      str           = "Sản phẩm",
+        shopee_product_id: Optional[str] = None,
+        rating_min:        Optional[int] = None,
+        rating_max:        Optional[int] = None,
+        sentiment:         Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
-        """Async streaming – dùng cho SSE / real-time UI."""
+        """
+        Async streaming – dùng cho SSE / real-time UI.
+
+        ✅ Fix #9: Thêm đầy đủ filter params như ask() đồng bộ.
+        """
         candidates = self.store.hybrid_search(
-            query      = question,
-            product_id = product_id if product_id else None,
-            top_k      = RETRIEVAL_TOP_K,
+            query             = question,
+            product_id        = product_id if product_id else None,
+            shopee_product_id = shopee_product_id,
+            rating_min        = rating_min,
+            rating_max        = rating_max,
+            sentiment         = sentiment,
+            top_k             = RETRIEVAL_TOP_K,
         )
         if not candidates:
             yield "Xin lỗi, không tìm thấy reviews liên quan đến câu hỏi của bạn."
             return
 
         top_docs = self.reranker.rerank(question, candidates, RERANKER_TOP_K)
+
+        # ✅ Fix: Thêm relevance check cho async path (giống ask())
+        best_score = top_docs[0].get("rerank_score", 0) if top_docs else 0
+        if best_score < RELEVANCE_THRESHOLD:
+            logger.warning(f"[aask] Câu hỏi không liên quan (score={best_score:.4f}): '{question}'")
+            yield (
+                f"Xin lỗi, câu hỏi '{question}' không liên quan đến reviews của sản phẩm. "
+                f"Tôi chỉ có thể trả lời về chất lượng, tính năng, giao hàng, bảo hành hoặc trải nghiệm mua sắm."
+            )
+            return
 
         chain_input = {
             "product_name": product_name,
@@ -188,7 +214,12 @@ class ReviewQAChain:
     # ─── Helpers ─────────────────────────────────────────────────────────────
 
     @staticmethod
-    def _irrelevant_question_response(question: str, product_name: str) -> dict:
+    def _irrelevant_question_response(
+        question: str,
+        product_name: str,
+        candidates_retrieved: int = 0,      # ✅ Fix: nhận số candidates thực tế
+        best_rerank_score: float = 0.0,     # ✅ Fix: nhận score thực tế
+    ) -> dict:
         """Trả về khi câu hỏi không liên quan đến reviews sản phẩm."""
         return {
             "answer":   (
@@ -199,9 +230,9 @@ class ReviewQAChain:
             "question":      question,
             "sources":       [],
             "pipeline_meta": {
-                "candidates_retrieved": 0,
+                "candidates_retrieved": candidates_retrieved,   # ✅ Fix: giá trị thực
                 "rejected_reason":      "irrelevant_question",
-                "best_rerank_score":    0.0,
+                "best_rerank_score":    round(best_rerank_score, 4),  # ✅ Fix: giá trị thực
             },
         }
 

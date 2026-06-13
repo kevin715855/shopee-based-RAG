@@ -68,11 +68,20 @@ class ReviewChunker:
                       author=str(row.get("author","")), reviewed_at=str(row.get("reviewed_at","")))
         if len(text)<=self.max_chars:
             return [ReviewChunk(text=text,chunk_index=0,**common)]
-        sents=sent_tokenize(text); chunks=[]; current=[]; cur_len=0; idx=0
+        sents = sent_tokenize(text)
+        chunks = []; current = []; cur_len = 0; idx = 0
         for sent in sents:
-            if cur_len+len(sent)>self.max_chars and current:
-                chunks.append(ReviewChunk(text=" ".join(current),chunk_index=idx,**common))
-                idx+=1; current=current[-self.overlap_sents:] if self.overlap_sents else []; cur_len=sum(len(s) for s in current)
-            current.append(sent); cur_len+=len(sent)
-        if current: chunks.append(ReviewChunk(text=" ".join(current),chunk_index=idx,**common))
+            # ✅ Fix #7: Tính đúng độ dài khi join (cộng thêm space giữa các câu)
+            added_len = len(sent) + (1 if current else 0)  # +1 cho khoảng trắng nối
+            if cur_len + added_len > self.max_chars and current:
+                chunks.append(ReviewChunk(text=" ".join(current), chunk_index=idx, **common))
+                idx += 1
+                carry = current[-self.overlap_sents:] if self.overlap_sents else []
+                current = carry
+                # Tính lại cur_len chính xác: tổng ký tự + spaces giữa các câu
+                cur_len = sum(len(s) for s in current) + max(0, len(current) - 1)
+            current.append(sent)
+            cur_len += added_len
+        if current:
+            chunks.append(ReviewChunk(text=" ".join(current), chunk_index=idx, **common))
         return chunks

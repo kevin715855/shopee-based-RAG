@@ -65,10 +65,14 @@ class BGEReranker:
         if not isinstance(scores, list):
             scores = scores.tolist()
 
-        for doc, score in zip(documents, scores):
-            doc["rerank_score"] = float(score)
+        # ✅ Fix #2: Tạo copy dict thay vì mutate trực tiếp dict gốc
+        # Mutate in-place sẽ làm dirty list candidates gốc → side effect khó debug
+        scored_docs = [
+            {**doc, "rerank_score": float(score)}
+            for doc, score in zip(documents, scores)
+        ]
 
-        reranked = sorted(documents, key=lambda x: x["rerank_score"], reverse=True)
+        reranked = sorted(scored_docs, key=lambda x: x["rerank_score"], reverse=True)
         logger.debug(
             f"Rerank: {len(documents)} → top-{top_k} "
             f"| best={reranked[0]['rerank_score']:.3f}"

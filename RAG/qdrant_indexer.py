@@ -3,30 +3,25 @@ qdrant_indexer.py
 -----------------
 Script chạy một lần để index reviews vào Qdrant:
   1. Đọc reviews từ file JSON
-  2. Tạo dense embeddings bằng BAAI/bge-m3 (qua rag_pipeline)
-  3. Upsert vectors vào Qdrant collection
+  2. Chunk reviews bằng ReviewChunker (tối ưu retrieval quality)
+  3. Tạo dense embeddings bằng BAAI/bge-m3 (qua rag_pipeline)
+  4. Upsert vectors vào Qdrant và đồng bộ BM25 corpus
 
 Chạy:
     python qdrant_indexer.py
     python qdrant_indexer.py --file data/reviews.json
+
+✅ Fix: Dùng store.add_chunks() thay vì direct QdrantClient
+       → BM25 corpus được đồng bộ tự động
+✅ Fix: Map user_name → author, date → reviewed_at nhất quán với qdrant_store
+✅ Fix: Tích hợp ReviewChunker để chunk review dài
 """
 
 import json
-import uuid
 import argparse
 from pathlib import Path
 
-from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, PointStruct, VectorParams
-
-# ✅ Dùng embedder từ rag_pipeline để nhất quán
-from rag_pipeline.bge_embedder import get_embedder
-from rag_pipeline.config import (
-    QDRANT_HOST,
-    QDRANT_PORT,
-    COLLECTION_NAME,   # ✅ Fix: "shopee_reviews" – khớp qdrant_store.py
-    EMBEDDING_DIM,
-)
+from rag_pipeline.config import COLLECTION_NAME
 
 DEFAULT_REVIEWS_FILE = "mock_reviews.json"
 
@@ -42,61 +37,52 @@ def load_reviews(filepath: str) -> list[dict]:
 
 def index_reviews(reviews: list[dict]) -> int:
     """
-    Tạo embeddings và upsert toàn bộ reviews vào Qdrant.
+    Chunk, embed và upsert toàn bộ reviews vào Qdrant.
+
+    ✅ Fix BM25: Dùng store.add_chunks() để đồng bộ BM25 corpus trong QdrantReviewStore.
+    ✅ Fix field mismatch: Chuẩn hóa user_name → author, date → reviewed_at.
+    ✅ Fix chunking: Dùng ReviewChunker để chia nhỏ review dài.
+
+    Args:
+        reviews: List review dicts từ mock_reviews.json / Shopee crawler
 
     Returns:
-        Số lượng điểm đã được index thành công.
+        Số lượng chunks đã được index thành công.
     """
-    # 1. Load embedder (lazy load, dùng singleton từ rag_pipeline)
-    embedder = get_embedder()
-    texts    = [r["content"] for r in reviews]
+    # Import lazy để tránh load model khi chỉ chạy --help
+    from rag_pipeline.qdrant_store import get_store
+    from rag_pipeline.chunker import ReviewChunker
 
-    print(f"Đang tạo embeddings cho {len(texts)} reviews ...")
-    vectors = embedder.embed_documents(texts)
+    # ── Chuẩn hóa field names ───────────────────────────────────────────────
+    # mock_reviews.json dùng: user_name, date, product_id (là Shopee ID)
+    # ReviewChunker / qdrant_store dùng: author, reviewed_at, shopee_product_id
+    normalized = []
+    for r in reviews:
+        normalized.append({
+            "review_id":         r["review_id"],
+            "content":           r["content"],
+            "shopee_product_id": r.get("product_id", ""),   # Shopee product ID
+            "rating":            r.get("rating", 0),
+            "sentiment":         r.get("sentiment", ""),    # ✅ Fix #3: giữ lại sentiment gốc
+            "author":            r.get("user_name", ""),    # map user_name → author
+            "reviewed_at":       r.get("date", ""),         # map date → reviewed_at
+        })
 
-    # 2. Kết nối Qdrant
-    client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
+    # ── Chunk ───────────────────────────────────────────────────────────────
+    print(f"Đang chunk {len(normalized)} reviews ...")
+    chunker = ReviewChunker()
+    # product_id=0 → tìm toàn bộ (không filter theo internal product_id)
+    chunks = chunker.chunk_reviews(normalized, product_id=0)
+    chunk_dicts = [c.to_dict() for c in chunks]
+    print(f"  → {len(chunk_dicts)} chunks sau khi split")
 
-    # 3. Tạo collection nếu chưa có
-    existing = [c.name for c in client.get_collections().collections]
-    if COLLECTION_NAME not in existing:
-        print(f"Tạo mới collection '{COLLECTION_NAME}' ...")
-        client.create_collection(
-            collection_name=COLLECTION_NAME,
-            vectors_config=VectorParams(size=EMBEDDING_DIM, distance=Distance.COSINE),
-        )
-    else:
-        print(f"Collection '{COLLECTION_NAME}' đã tồn tại, tiến hành upsert ...")
+    # ── Embed + Upsert vào Qdrant (đồng thời cập nhật BM25 corpus) ──────────
+    print(f"Đang embed và upsert {len(chunk_dicts)} chunks vào Qdrant ...")
+    store = get_store()
+    ids = store.add_chunks(chunk_dicts)
 
-    # 4. Tạo PointStruct và upsert
-    points = []
-    for review, vector in zip(reviews, vectors):
-        point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, review["review_id"]))
-        points.append(
-            PointStruct(
-                id      = point_id,
-                vector  = vector,
-                payload = {
-                    "text":          review["content"],
-                    "review_id":     review["review_id"],
-                    "product_id":    0,
-                    "shopee_product_id": review.get("product_id", ""),
-                    "user_name":     review.get("user_name", ""),
-                    "rating":        review.get("rating", 0),
-                    "sentiment":     _rating_to_sentiment(review.get("rating", 0)),
-                    "date":          review.get("date", ""),
-                    "helpful_count": review.get("helpful_count", 0),
-                    "chunk_index":   0,
-                },
-            )
-        )
-
-    # Upsert theo batch 100
-    for i in range(0, len(points), 100):
-        client.upsert(collection_name=COLLECTION_NAME, points=points[i:i+100])
-
-    print(f"✅ Đã index thành công {len(points)} reviews vào '{COLLECTION_NAME}'.")
-    return len(points)
+    print(f"✅ Đã index thành công {len(ids)} chunks từ {len(reviews)} reviews vào '{COLLECTION_NAME}'.")
+    return len(ids)
 
 
 def _rating_to_sentiment(rating: int) -> str:
