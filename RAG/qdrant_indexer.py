@@ -28,16 +28,59 @@ from rag_pipeline.config import (
     EMBEDDING_DIM,
 )
 
-DEFAULT_REVIEWS_FILE = "mock_reviews.json"
+DEFAULT_REVIEWS_FILE = "shopee/reviews"
 
+
+# def load_reviews(filepath: str) -> list[dict]:
+#     """Đọc danh sách reviews từ file JSON."""
+#     path = Path(filepath)
+#     if not path.exists():
+#         raise FileNotFoundError(f"Không tìm thấy file: {filepath}")
+#     with open(path, "r", encoding="utf-8") as f:
+#         return json.load(f)
 
 def load_reviews(filepath: str) -> list[dict]:
-    """Đọc danh sách reviews từ file JSON."""
     path = Path(filepath)
     if not path.exists():
-        raise FileNotFoundError(f"Không tìm thấy file: {filepath}")
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+        raise FileNotFoundError(f"Không tìm thấy: {filepath}")
+
+    reviews = []
+
+    if path.is_dir():
+        files = list(path.glob("*.json")) + list(path.glob("*.jsonl"))
+    else:
+        files = [path]
+
+    for file in files:
+        with open(file, "r", encoding="utf-8") as f:
+            if file.suffix == ".jsonl":
+                for line in f:
+                    if line.strip():
+                        r = json.loads(line)
+                        reviews.append(_normalize_review(r))
+            else:
+                data = json.load(f)
+                if isinstance(data, list):
+                    reviews.extend(_normalize_review(r) for r in data)
+                else:
+                    reviews.append(_normalize_review(data))
+
+    return reviews
+
+#xử lý file jsonl -> json
+def _normalize_review(r: dict) -> dict:
+    return {
+        "review_id": str(r.get("review_id", "")),
+        "product_id": str(r.get("product_id", "")),
+        "user_name": r.get("user_name") or r.get("raw_payload", {}).get("author_username", ""),
+        "rating": r.get("rating", 0),
+        "content": r.get("content") or r.get("text", ""),
+        "date": r.get("date") or r.get("created_at", ""),
+        "helpful_count": r.get("helpful_count", 0),
+        "category_id": r.get("category_id", ""),
+        "category": r.get("category", ""),
+        "review_url": r.get("review_url", ""),
+    }
 
 
 def index_reviews(reviews: list[dict]) -> int:
@@ -87,6 +130,9 @@ def index_reviews(reviews: list[dict]) -> int:
                     "date":          review.get("date", ""),
                     "helpful_count": review.get("helpful_count", 0),
                     "chunk_index":   0,
+                    "category_id": review.get("category_id", ""),
+                    "category": review.get("category", ""),
+                    "review_url": review.get("review_url", ""),
                 },
             )
         )
