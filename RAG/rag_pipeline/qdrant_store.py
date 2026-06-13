@@ -19,6 +19,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import (
     Distance, VectorParams, PointStruct,
     Filter, FieldCondition, MatchValue, Range,
+    ScrollRequest,
 )
 from rank_bm25 import BM25Okapi
 
@@ -158,16 +159,82 @@ class QdrantReviewStore:
         )
         return [self._to_doc(r.payload, r.score, "dense") for r in response.points]
 
+    def _rebuild_bm25_from_qdrant(self) -> None:
+        """
+        Rebuild BM25 corpus từ Qdrant.
+
+        ✅ Fix: Được gọi khi BM25 corpus rỗng – thường xảy ra sau khi app restart
+        hoặc khi data được index trực tiếp vào Qdrant qua client khác.
+        Dùng scroll() để fetch toàn bộ payload mà không cần vectors.
+        """
+        logger.info("[BM25] Corpus rỗng, đang rebuild từ Qdrant ...")
+        corpus: list[dict] = []
+        offset = None
+
+        while True:
+            try:
+                points, next_offset = self.client.scroll(
+                    collection_name=COLLECTION_NAME,
+                    limit=1000,
+                    offset=offset,
+                    with_payload=True,
+                    with_vectors=False,
+                )
+            except Exception as e:
+                # Collection có thể chưa tồn tại hoặc Qdrant chưa sẵn sàng
+                logger.warning(f"[BM25] Scroll thất bại, corpus rỗng: {e}")
+                break
+
+            for r in points:
+                payload = r.payload or {}
+                if payload.get("text"):
+                    # ✅ Fix #4: Lưu đầy đủ metadata thay vì chỉ text + product_id
+                    corpus.append({
+                        "text":              payload["text"],
+                        "product_id":        payload.get("product_id", 0),
+                        "shopee_product_id": payload.get("shopee_product_id", ""),
+                        "rating":            payload.get("rating", 0),
+                        "sentiment":         payload.get("sentiment", "neutral"),
+                        "author":            payload.get("author", ""),
+                        "reviewed_at":       payload.get("reviewed_at", ""),
+                        "review_id":         payload.get("review_id", ""),
+                        "chunk_index":       payload.get("chunk_index", 0),
+                    })
+
+            if next_offset is None:
+                break
+            offset = next_offset
+
+        self._bm25_corpus = corpus
+        logger.info(f"[BM25] Rebuild xong: {len(corpus)} docs")
+
     def sparse_search(
         self,
         query: str,
-        product_id: Optional[int] = None,
+        product_id:        Optional[int] = None,
+        shopee_product_id: Optional[str] = None,
+        rating_min:        Optional[int] = None,
+        rating_max:        Optional[int] = None,
+        sentiment:         Optional[str] = None,
         top_k: int = RETRIEVAL_TOP_K,
     ) -> List[dict]:
-        """BM25 sparse search (in-memory, filter theo product_id)."""
+        """BM25 sparse search (in-memory, filter theo product_id và các metadata filter)."""
+        # ✅ Fix: Auto-rebuild BM25 corpus từ Qdrant nếu corpus chưa được populate
+        if not self._bm25_corpus:
+            self._rebuild_bm25_from_qdrant()
+
         corpus = self._bm25_corpus
+        # ✅ Fix #5: Áp dụng đầy đủ filter params (trước chỉ filter product_id)
         if product_id is not None:
             corpus = [c for c in corpus if c.get("product_id") == product_id]
+        if shopee_product_id:
+            corpus = [c for c in corpus if c.get("shopee_product_id") == shopee_product_id]
+        if sentiment:
+            corpus = [c for c in corpus if c.get("sentiment") == sentiment]
+        if rating_min is not None:
+            corpus = [c for c in corpus if c.get("rating", 0) >= rating_min]
+        if rating_max is not None:
+            corpus = [c for c in corpus if c.get("rating", 0) <= rating_max]
         if not corpus:
             return []
 
@@ -204,7 +271,11 @@ class QdrantReviewStore:
             query, product_id, shopee_product_id,
             rating_min, rating_max, sentiment, top_k,
         )
-        sparse_results = self.sparse_search(query, product_id, top_k)
+        # ✅ Fix #5: Truyền đầy đủ filter params sang sparse_search
+        sparse_results = self.sparse_search(
+            query, product_id, shopee_product_id,
+            rating_min, rating_max, sentiment, top_k,
+        )
 
         # Reciprocal Rank Fusion
         scores: dict[str, float] = {}
@@ -212,12 +283,14 @@ class QdrantReviewStore:
         k = 60  # RRF constant
 
         for rank, doc in enumerate(dense_results):
-            key = doc["text"][:100]
+            # ✅ Fix #1: Dùng review_id+chunk_index làm key thay vì text[:100]
+            # text[:100] dễ bị collision khi review ngắn hoặc trùng đầu câu
+            key = f"{doc.get('review_id', '')}_{doc.get('chunk_index', rank)}"
             scores[key] = scores.get(key, 0) + alpha * (1 / (k + rank + 1))
             docs[key]   = doc
 
         for rank, doc in enumerate(sparse_results):
-            key = doc["text"][:100]
+            key = f"{doc.get('review_id', '')}_{doc.get('chunk_index', rank)}"
             scores[key] = scores.get(key, 0) + (1 - alpha) * (1 / (k + rank + 1))
             if key not in docs:
                 docs[key] = doc

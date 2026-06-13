@@ -64,13 +64,16 @@ class BGEM3Embeddings(Embeddings):
         """
         Embed query. bge-m3 khuyến nghị instruction prefix cho query
         để tăng retrieval accuracy.
+
+        ✅ Fix #6: Dùng max_length=512 nhất quán với embed_documents
+        để document và query nằm trong cùng không gian vector.
         """
         self._load()
         prefixed = f"Represent this sentence for searching relevant passages: {text}"
         output = self._model.encode(
             [prefixed],
             batch_size=1,
-            max_length=256,
+            max_length=512,
             return_dense=True,
             return_sparse=False,
             return_colbert_vecs=False,
