@@ -168,8 +168,12 @@ def save_shopee_session(
     with sync_playwright() as playwright:
         context = playwright.chromium.launch_persistent_context(
             user_data_dir=user_data_dir,
-            headless=False,
-            args=["--disable-blink-features=AutomationControlled"],
+            headless=True,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--remote-debugging-port=9222",
+                "--remote-debugging-address=0.0.0.0"
+            ],
             locale="vi-VN",
             user_agent=DEFAULT_USER_AGENT,
             viewport={"width": 1366, "height": 900},
@@ -179,7 +183,12 @@ def save_shopee_session(
             page.goto(normalize_url_for_browser(login_url), wait_until="domcontentloaded", timeout=timeout_ms)
         except PlaywrightTimeoutError:
             pass
-        print("Login Shopee in the opened browser window, then return here and press Enter.")
+        print("==================================================================")
+        print("Trình duyệt đang chạy ẩn với tính năng Remote Debugging.")
+        print("Hãy mở Chrome/Edge trên máy tính cá nhân của bạn, truy cập địa chỉ IP của server với cổng 9222 (ví dụ: http://<IP-Server>:9222).")
+        print("Nhấn vào trang Shopee hiện ra trong danh sách để xem màn hình và thao tác đăng nhập.")
+        print("Sau khi đăng nhập xong trên giao diện, hãy quay lại terminal này và nhấn Enter để lưu phiên đăng nhập.")
+        print("==================================================================")
         input()
         context.storage_state(path=auth_state_path)
         context.close()

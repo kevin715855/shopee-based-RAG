@@ -6,13 +6,12 @@ session_login_url: https://shopee.vn/
 category: "Đồ điện tử / Phụ kiện điện tử"
 category_urls:
   - https://shopee.vn/Th%E1%BB%9Di-Trang-Nam-cat.11035567
-  - https://shopee.vn/%C4%90i%E1%BB%87n-Tho%E1%BA%A1i-Ph%E1%BB%A5-Ki%E1%BB%87n-cat.11036030
 
-max_categories: 2
-max_products: 200
+max_categories: 1
+max_products: 500
 max_products_per_category: 200
-max_pages_per_category: 2
-max_reviews_per_product: 50
+max_pages_per_category: 3
+max_reviews_per_product: 100
 dedupe_across_categories: true
 delay_seconds:
   min: 2

@@ -45,10 +45,11 @@ def run_index(reviews_file: str):
 
 
 def run_ask(
-    question:     str,
-    product_name: str = "Sản phẩm",
-    product_id:   int = 0,
-    category:     str = "",
+    question:          str,
+    product_name:      str = "Sản phẩm",
+    product_id:        int = 0,
+    category:          str = "",
+    shopee_product_id: str = "",
 ) -> dict:
     """Hỏi một câu hỏi tự do về sản phẩm dựa trên reviews."""
     from rag_pipeline import get_qa_chain
@@ -58,10 +59,11 @@ def run_ask(
 
     logger.info(f"[Q&A] Câu hỏi: '{question}'")
     result = qa.ask(
-        question     = question,
-        product_id   = product_id,
-        product_name = product_name,
-        category = category,
+        question          = question,
+        product_id        = product_id,
+        product_name      = product_name,
+        category          = category or None,          # ✅ Fixed: pass đúng param
+        shopee_product_id = shopee_product_id or None, # ✅ Added
     )
 
     _print_qa_result(result)
@@ -125,15 +127,20 @@ def _print_qa_result(result: dict):
     if sources:
         print(f"📎 DỰA TRÊN {len(sources)} REVIEWS:")
         for i, s in enumerate(sources, 1):
-            score_str = f" [rel={s['rerank_score']:.2f}]" if s.get("rerank_score") else ""
-            print(f"  [{i}] {s['rating']}/5⭐ — {s['author']}{score_str}")
+            score_str    = f" [rel={s['rerank_score']:.2f}]" if s.get("rerank_score") else ""
+            reviewed_str = f" | {s['reviewed_at'][:10]}" if s.get("reviewed_at") else ""  # ✅ Added
+            print(f"  [{i}] {s['rating']}/5⭐ — {s['author']}{score_str}{reviewed_str}")
             print(f"       {s['text'][:100]}...")
+            if s.get("review_url"):                                                          # ✅ Added
+                print(f"       🔗 {s['review_url']}")
 
     if not rejected:
+        cat_filter = meta.get('category_filter')
+        cat_str    = f", category='{cat_filter}'" if cat_filter else ""
         print(
             f"\n📊 Pipeline: retrieved={meta.get('candidates_retrieved', 0)}, "
             f"reranked={meta.get('docs_reranked', 0)}, "
-            f"to_llm={meta.get('docs_to_llm', 0)}"
+            f"to_llm={meta.get('docs_to_llm', 0)}{cat_str}"
         )
     print("=" * 65)
 
@@ -183,6 +190,12 @@ Ví dụ:
     )
 
     parser.add_argument(
+        "--shopee-id",
+        default="",
+        help="Shopee Product ID (string) để filter reviews chính xác theo sản phẩm",
+    )
+
+    parser.add_argument(
         "--category",
         default="",
         help="Tên category để lọc ngữ cảnh khi hỏi, ví dụ: Bách Hóa Online",
@@ -201,10 +214,11 @@ Ví dụ:
         run_index(args.file)
     elif args.mode == "ask":
         run_ask(
-            question     = args.question,
-            product_name = args.product,
-            product_id   = args.product_id,
-            category     = args.category,
+            question          = args.question,
+            product_name      = args.product,
+            product_id        = args.product_id,
+            category          = args.category,
+            shopee_product_id = args.shopee_id,   # ✅ Added
         )
     elif args.mode == "demo":
         run_demo(product_name=args.product)

@@ -5,7 +5,6 @@ services:
     runtime: nvidia
     restart: unless-stopped
     environment:
-      # Cài đặt thành 0 hoặc all để dùng 1 GPU duy nhất (thay vì 2,3 như cũ)
       - NVIDIA_VISIBLE_DEVICES=0
       - PYTORCH_ALLOC_CONF=expandable_segments:True
       - HF_HUB_READ_TIMEOUT=60
@@ -27,3 +26,45 @@ services:
       --host 0.0.0.0
       --dtype=half
       --api-key 1234
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant_shopee
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage   # ✅ Persistent – không mất khi restart
+
+  rag_api:
+    image: python:3.11-slim
+    container_name: rag_api
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      # Mount toàn bộ thư mục RAG vào container
+      - ./:/app
+      # Mount HuggingFace cache để không phải tải lại model mỗi lần
+      - /mnt/disk1/cheetah/vllm_shoppe_cache:/root/.cache/huggingface
+    ports:
+      - "8000:8000"                  # ← Port server ngoài gọi vào
+    environment:
+      # Kết nối Qdrant nội bộ qua tên service (không cần localhost)
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      # Kết nối vLLM nội bộ
+      - VLLM_BASE_URL=http://vllm_rec:8036/v1
+      - VLLM_MODEL_NAME=llama-frog
+      - VLLM_API_KEY=1234
+      # Embedding chạy trên GPU host (qua CUDA device)
+      - EMBEDDING_DEVICE=cpu          # đổi thành cuda nếu container có GPU
+    depends_on:
+      - qdrant
+      - vllm_rec
+    command: >
+      bash -c "pip install -r requirements.txt -q &&
+               uvicorn api:app --host 0.0.0.0 --port 8000 --workers 2"
+
+volumes:
+  qdrant_data:

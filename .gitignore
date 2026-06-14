@@ -54,3 +54,7 @@ data/reports/**
 *.njsproj
 *.sln
 *.sw?
+
+
+*.json
+*jsonl
