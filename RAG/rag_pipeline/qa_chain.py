@@ -72,6 +72,7 @@ class ReviewQAChain:
         rating_min:  Optional[int]    = None,
         rating_max:  Optional[int]    = None,
         sentiment:   Optional[str]    = None,
+        category:    Optional[str]    = None,   # ✅ Added
     ) -> dict:
         """
         Trả lời câu hỏi tự do dựa trên reviews đã index.
@@ -80,9 +81,10 @@ class ReviewQAChain:
             question         : câu hỏi của người dùng (bất kỳ)
             product_id       : ID nội bộ của sản phẩm (0 = tìm toàn bộ)
             product_name     : tên sản phẩm (dùng trong prompt)
-            shopee_product_id: ID Shopee để filter
+            shopee_product_id: ID Shopee để filter reviews theo sản phẩm cụ thể
             rating_min/max   : lọc theo rating
             sentiment        : lọc theo sentiment ("positive"/"negative"/"neutral")
+            category         : lọc theo danh mục (ví dụ: "Máy Tính & Laptop")
 
         Returns:
             dict với keys:
@@ -101,6 +103,7 @@ class ReviewQAChain:
             rating_min        = rating_min,
             rating_max        = rating_max,
             sentiment         = sentiment,
+            category          = category,   # ✅ pass category
             top_k             = RETRIEVAL_TOP_K,
         )
         logger.info(f"[Q&A] Hybrid search → {len(candidates)} candidates")
@@ -130,10 +133,12 @@ class ReviewQAChain:
             )
 
         # Step 3: LLM trả lời
+        used_docs = top_docs[:QA_MAX_REVIEWS]
         chain_input = {
             "product_name": product_name,
             "question":     question,
-            "reviews_text": format_reviews_for_qa(top_docs, QA_MAX_REVIEWS),
+            "reviews_text": format_reviews_for_qa(used_docs, QA_MAX_REVIEWS),
+            "review_count": len(used_docs),   # ✅ thêm số lượng reviews vào prompt header
         }
 
         answer = self._chain.invoke(chain_input)
@@ -148,7 +153,10 @@ class ReviewQAChain:
                     "rating":       d.get("rating", 0),
                     "sentiment":    d.get("sentiment", "neutral"),
                     "rerank_score": round(d.get("rerank_score", 0), 3),
-                    "author":       d.get("author") or d.get("user_name", "Ẩn danh"),
+                    "author":       d.get("author", "Ẩn danh"),   # ✅ key đúng
+                    "reviewed_at":  d.get("reviewed_at", ""),      # ✅ Added
+                    "review_url":   d.get("review_url", ""),        # ✅ Added
+                    "category":     d.get("category", ""),          # ✅ Added
                 }
                 for d in top_docs[:QA_MAX_REVIEWS]
             ],
@@ -158,18 +166,18 @@ class ReviewQAChain:
                 "docs_to_llm":          min(len(top_docs), QA_MAX_REVIEWS),
                 "query_used":           question,
                 "product_id":           product_id,
+                "shopee_product_id":    shopee_product_id,   # ✅ Added
+                "category_filter":      category,            # ✅ Added
             },
         }
 
     async def aask(
         self,
         question:          str,
-        product_id:        int           = 0,
-        product_name:      str           = "Sản phẩm",
+        product_id:        int = 0,
+        product_name:      str = "Sản phẩm",
         shopee_product_id: Optional[str] = None,
-        rating_min:        Optional[int] = None,
-        rating_max:        Optional[int] = None,
-        sentiment:         Optional[str] = None,
+        category:          Optional[str] = None,   # ✅ Added
     ) -> AsyncGenerator[str, None]:
         """
         Async streaming – dùng cho SSE / real-time UI.
@@ -180,9 +188,7 @@ class ReviewQAChain:
             query             = question,
             product_id        = product_id if product_id else None,
             shopee_product_id = shopee_product_id,
-            rating_min        = rating_min,
-            rating_max        = rating_max,
-            sentiment         = sentiment,
+            category          = category,   # ✅ pass category
             top_k             = RETRIEVAL_TOP_K,
         )
         if not candidates:
@@ -191,20 +197,21 @@ class ReviewQAChain:
 
         top_docs = self.reranker.rerank(question, candidates, RERANKER_TOP_K)
 
-        # ✅ Fix: Thêm relevance check cho async path (giống ask())
+        # ✅ Added: relevance check – đồng bộ với ask()
         best_score = top_docs[0].get("rerank_score", 0) if top_docs else 0
         if best_score < RELEVANCE_THRESHOLD:
-            logger.warning(f"[aask] Câu hỏi không liên quan (score={best_score:.4f}): '{question}'")
             yield (
-                f"Xin lỗi, câu hỏi '{question}' không liên quan đến reviews của sản phẩm. "
-                f"Tôi chỉ có thể trả lời về chất lượng, tính năng, giao hàng, bảo hành hoặc trải nghiệm mua sắm."
+                f"Xin lỗi, câu hỏi không liên quan đến reviews sản phẩm '{product_name}'. "
+                f"Vui lòng hỏi về chất lượng, giao hàng, bảo hành hoặc trải nghiệm mua sắm."
             )
             return
 
+        used_docs = top_docs[:QA_MAX_REVIEWS]
         chain_input = {
             "product_name": product_name,
             "question":     question,
-            "reviews_text": format_reviews_for_qa(top_docs, QA_MAX_REVIEWS),
+            "reviews_text": format_reviews_for_qa(used_docs, QA_MAX_REVIEWS),
+            "review_count": len(used_docs),   # ✅ thêm số lượng reviews vào prompt header
         }
 
         streaming_chain = qa_prompt | get_streaming_llm() | StrOutputParser()

@@ -25,6 +25,15 @@ from rag_pipeline.config import COLLECTION_NAME
 
 DEFAULT_REVIEWS_FILE = "shopee/reviews"
 
+DEFAULT_REVIEWS_FILE = "shopee/reviews"
+
+# def load_reviews(filepath: str) -> list[dict]:
+#     """Đọc danh sách reviews từ file JSON."""
+#     path = Path(filepath)
+#     if not path.exists():
+#         raise FileNotFoundError(f"Không tìm thấy file: {filepath}")
+#     with open(path, "r", encoding="utf-8") as f:
+#         return json.load(f)
 
 # def load_reviews(filepath: str) -> list[dict]:
 #     """Đọc danh sách reviews từ file JSON."""
@@ -63,18 +72,45 @@ def load_reviews(filepath: str) -> list[dict]:
     return reviews
 
 #xử lý file jsonl -> json
+def _get_username(r: dict) -> str:
+    """Trích xuất tên hiển thị từ review record.
+
+    Ưu tiên:
+      1. Field 'user_name' trực tiếp (mock data / old format)
+      2. raw_payload.anonymous → "Ẩn danh"
+      3. raw_payload.userid    → "Người dùng #<id>"
+      4. Fallback              → "Ẩn danh"
+    """
+    if r.get("user_name"):
+        return r["user_name"]
+    raw = r.get("raw_payload", {})
+    if isinstance(raw, dict):
+        if raw.get("anonymous"):
+            return "Ẩn danh"
+        uid = raw.get("userid")
+        if uid:
+            return f"Người dùng #{uid}"
+    return "Ẩn danh"
+
+
 def _normalize_review(r: dict) -> dict:
+    # Thử lấy content: field trực tiếp → raw_payload.comment (Shopee API)
+    content = (
+        r.get("content")
+        or r.get("text", "")
+        or (r.get("raw_payload") or {}).get("comment", "")   # ✅ Added fallback
+    )
     return {
-        "review_id": str(r.get("review_id", "")),
-        "product_id": str(r.get("product_id", "")),
-        "user_name": r.get("user_name") or r.get("raw_payload", {}).get("author_username", ""),
-        "rating": r.get("rating", 0),
-        "content": r.get("content") or r.get("text", ""),
-        "date": r.get("date") or r.get("created_at", ""),
+        "review_id":     str(r.get("review_id", "")),
+        "product_id":    str(r.get("product_id", "")),   # Shopee string ID
+        "user_name":     _get_username(r),                # ✅ Fixed
+        "rating":        r.get("rating", 0),
+        "content":       content,
+        "date":          r.get("date") or r.get("created_at", ""),
         "helpful_count": r.get("helpful_count", 0),
-        "category_id": r.get("category_id", ""),
-        "category": r.get("category", ""),
-        "review_url": r.get("review_url", ""),
+        "category_id":   r.get("category_id", ""),
+        "category":      r.get("category", ""),
+        "review_url":    r.get("review_url", ""),
     }
 
 
@@ -92,24 +128,18 @@ def index_reviews(reviews: list[dict]) -> int:
     Returns:
         Số lượng chunks đã được index thành công.
     """
-    # Import lazy để tránh load model khi chỉ chạy --help
-    from rag_pipeline.qdrant_store import get_store
-    from rag_pipeline.chunker import ReviewChunker
+    # 1. Load embedder (lazy load, dùng singleton từ rag_pipeline)
+    embedder = get_embedder()
 
-    # ── Chuẩn hóa field names ───────────────────────────────────────────────
-    # mock_reviews.json dùng: user_name, date, product_id (là Shopee ID)
-    # ReviewChunker / qdrant_store dùng: author, reviewed_at, shopee_product_id
-    normalized = []
-    for r in reviews:
-        normalized.append({
-            "review_id":         r["review_id"],
-            "content":           r["content"],
-            "shopee_product_id": r.get("product_id", ""),   # Shopee product ID
-            "rating":            r.get("rating", 0),
-            "sentiment":         r.get("sentiment", ""),    # ✅ Fix #3: giữ lại sentiment gốc
-            "author":            r.get("user_name", ""),    # map user_name → author
-            "reviewed_at":       r.get("date", ""),         # map date → reviewed_at
-        })
+    # Bỏ qua reviews không có nội dung (rating-only, không có giá trị cho RAG)
+    valid_reviews = [r for r in reviews if r.get("content", "").strip()]
+    skipped = len(reviews) - len(valid_reviews)
+    if skipped:
+        print(f"⚠️  Bỏ qua {skipped} reviews không có nội dung (rating-only).")
+
+    texts = [r["content"] for r in valid_reviews]
+    print(f"Đang tạo embeddings cho {len(texts)} reviews ...")
+    vectors = embedder.embed_documents(texts)
 
     # ── Chunk ───────────────────────────────────────────────────────────────
     print(f"Đang chunk {len(normalized)} reviews ...")
@@ -124,8 +154,41 @@ def index_reviews(reviews: list[dict]) -> int:
     store = get_store()
     ids = store.add_chunks(chunk_dicts)
 
-    print(f"✅ Đã index thành công {len(ids)} chunks từ {len(reviews)} reviews vào '{COLLECTION_NAME}'.")
-    return len(ids)
+    # 4. Tạo PointStruct và upsert
+    points = []
+    for review, vector in zip(valid_reviews, vectors):
+        # Dùng uuid5 deterministc từ review_id để tránh trùng lặp khi re-index
+        point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, review["review_id"]))
+        points.append(
+            PointStruct(
+                id      = point_id,
+                vector  = vector,
+                payload = {
+                    "text":               review["content"],
+                    "review_id":          review["review_id"],
+                    # product_id (int) = 0 → internal placeholder, KHÔNG dùng để filter
+                    # Dùng shopee_product_id (str) để filter theo sản phẩm
+                    "product_id":         0,
+                    "shopee_product_id":  review.get("product_id", ""),  # Shopee string ID
+                    "author":             review.get("user_name", "Ẩn danh"),  # ✅ Fixed: dùng key 'author'
+                    "rating":             review.get("rating", 0),
+                    "sentiment":          _rating_to_sentiment(review.get("rating", 0)),
+                    "reviewed_at":        review.get("date", ""),
+                    "helpful_count":      review.get("helpful_count", 0),
+                    "chunk_index":        0,
+                    "category_id":        review.get("category_id", ""),
+                    "category":           review.get("category", ""),
+                    "review_url":         review.get("review_url", ""),
+                },
+            )
+        )
+
+    # Upsert theo batch 100
+    for i in range(0, len(points), 100):
+        client.upsert(collection_name=COLLECTION_NAME, points=points[i:i+100])
+
+    print(f"✅ Đã index thành công {len(points)} reviews vào '{COLLECTION_NAME}'.")
+    return len(points)
 
 
 def _rating_to_sentiment(rating: int) -> str:

@@ -20,7 +20,7 @@ load_dotenv()
 VLLM_BASE_URL   : str   = os.getenv("VLLM_BASE_URL",   "http://localhost:8036/v1")
 VLLM_MODEL_NAME : str   = os.getenv("VLLM_MODEL_NAME", "llama-frog")
 VLLM_API_KEY    : str   = os.getenv("VLLM_API_KEY",    "1234")
-VLLM_MAX_TOKENS : int   = int(os.getenv("VLLM_MAX_TOKENS",  "512"))
+VLLM_MAX_TOKENS : int   = int(os.getenv("VLLM_MAX_TOKENS",  "1024"))    # tăng từ 512 → đủ cho câu trả lời tổng hợp
 VLLM_TEMPERATURE: float = float(os.getenv("VLLM_TEMPERATURE", "0.3"))
 
 # ── Qdrant Vector DB ───────────────────────────────────────────────────────────

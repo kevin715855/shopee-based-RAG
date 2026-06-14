@@ -58,12 +58,15 @@ class QdrantReviewStore:
                 collection_name=COLLECTION_NAME,
                 vectors_config=VectorParams(size=EMBEDDING_DIM, distance=Distance.COSINE),
             )
+            logger.info(f"Tạo Qdrant collection '{COLLECTION_NAME}' ✓")
             # Payload indexes cho filter nhanh
             for field, schema in [
                 ("product_id",        "integer"),
                 ("shopee_product_id", "keyword"),
                 ("rating",            "integer"),
                 ("sentiment",         "keyword"),
+                ("category",          "keyword"),   # ✅ Added
+                ("category_id",       "keyword"),   # ✅ Added
             ]:
                 self.client.create_payload_index(
                     collection_name=COLLECTION_NAME,
@@ -134,6 +137,7 @@ class QdrantReviewStore:
         rating_min:        Optional[int] = None,
         rating_max:        Optional[int] = None,
         sentiment:         Optional[str] = None,
+        category:          Optional[str] = None,   # ✅ Added
         top_k: int = RETRIEVAL_TOP_K,
     ) -> List[dict]:
         """Dense vector search với optional metadata filter."""
@@ -148,6 +152,8 @@ class QdrantReviewStore:
             must.append(FieldCondition(key="sentiment",         match=MatchValue(value=sentiment)))
         if rating_min is not None or rating_max is not None:
             must.append(FieldCondition(key="rating",            range=Range(gte=rating_min or 1, lte=rating_max or 5)))
+        if category:
+            must.append(FieldCondition(key="category",          match=MatchValue(value=category)))  # ✅ Added
 
         # ✅ Fix: qdrant-client >= 1.10 dùng query_points() thay search() (đã bị xóa)
         response = self.client.query_points(
@@ -212,29 +218,19 @@ class QdrantReviewStore:
         self,
         query: str,
         product_id:        Optional[int] = None,
-        shopee_product_id: Optional[str] = None,
-        rating_min:        Optional[int] = None,
-        rating_max:        Optional[int] = None,
-        sentiment:         Optional[str] = None,
+        shopee_product_id: Optional[str] = None,   # ✅ Added
+        category:          Optional[str] = None,   # ✅ Added
         top_k: int = RETRIEVAL_TOP_K,
     ) -> List[dict]:
-        """BM25 sparse search (in-memory, filter theo product_id và các metadata filter)."""
-        # ✅ Fix: Auto-rebuild BM25 corpus từ Qdrant nếu corpus chưa được populate
-        if not self._bm25_corpus:
-            self._rebuild_bm25_from_qdrant()
-
+        """BM25 sparse search (in-memory, filter theo product_id / shopee_product_id / category)."""
         corpus = self._bm25_corpus
         # ✅ Fix #5: Áp dụng đầy đủ filter params (trước chỉ filter product_id)
         if product_id is not None:
             corpus = [c for c in corpus if c.get("product_id") == product_id]
         if shopee_product_id:
-            corpus = [c for c in corpus if c.get("shopee_product_id") == shopee_product_id]
-        if sentiment:
-            corpus = [c for c in corpus if c.get("sentiment") == sentiment]
-        if rating_min is not None:
-            corpus = [c for c in corpus if c.get("rating", 0) >= rating_min]
-        if rating_max is not None:
-            corpus = [c for c in corpus if c.get("rating", 0) <= rating_max]
+            corpus = [c for c in corpus if c.get("shopee_product_id") == shopee_product_id]  # ✅ Added
+        if category:
+            corpus = [c for c in corpus if c.get("category") == category]                   # ✅ Added
         if not corpus:
             return []
 
@@ -258,6 +254,7 @@ class QdrantReviewStore:
         rating_min:        Optional[int] = None,
         rating_max:        Optional[int] = None,
         sentiment:         Optional[str] = None,
+        category:          Optional[str] = None,   # ✅ Added
         top_k: int = RETRIEVAL_TOP_K,
         alpha: float = 0.7,   # 0=pure sparse, 1=pure dense
     ) -> List[dict]:
@@ -265,16 +262,15 @@ class QdrantReviewStore:
         Hybrid search: Dense + Sparse → Reciprocal Rank Fusion.
 
         Args:
-            alpha: weight cho dense score (0.7 = 70% dense, 30% sparse)
+            alpha   : weight cho dense score (0.7 = 70% dense, 30% sparse)
+            category: filter theo category (ví dụ: "Máy Tính & Laptop")
         """
         dense_results  = self.dense_search(
             query, product_id, shopee_product_id,
-            rating_min, rating_max, sentiment, top_k,
+            rating_min, rating_max, sentiment, category, top_k,   # ✅ pass category
         )
-        # ✅ Fix #5: Truyền đầy đủ filter params sang sparse_search
         sparse_results = self.sparse_search(
-            query, product_id, shopee_product_id,
-            rating_min, rating_max, sentiment, top_k,
+            query, product_id, shopee_product_id, category, top_k,  # ✅ pass category
         )
 
         # Reciprocal Rank Fusion
@@ -318,8 +314,11 @@ class QdrantReviewStore:
             "shopee_product_id": payload.get("shopee_product_id", ""),
             "rating":            payload.get("rating", 0),
             "sentiment":         payload.get("sentiment", "neutral"),
-            "author":            payload.get("author", ""),
+            "author":            payload.get("author", "Ẩn danh"),   # ✅ key đúng là 'author'
             "reviewed_at":       payload.get("reviewed_at", ""),
+            "category":          payload.get("category", ""),         # ✅ Added
+            "category_id":       payload.get("category_id", ""),      # ✅ Added
+            "review_url":        payload.get("review_url", ""),       # ✅ Added
         }
 
     def collection_info(self) -> dict:
