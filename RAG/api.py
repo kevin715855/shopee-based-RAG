@@ -28,7 +28,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from loguru import logger
 from pydantic import BaseModel, Field
-
+import pandas as pd
+from pathlib import Path
 
 # ── Lifespan: khởi tạo singleton khi app start ─────────────────────────────
 
@@ -135,6 +136,33 @@ _index_jobs: dict[str, dict] = {}   # job_id → {status, started_at, result, er
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────
+
+@app.get("/api/metadata", tags=["System"])
+async def get_metadata():
+    """
+    Trả về danh sách Category và Product từ file CSV đã xử lý.
+    Phục vụ cho Frontend tạo Dropdown menu cho user chọn trước khi chat.
+    """
+    products_path = Path("data/processed/products.csv")
+    
+    if not products_path.exists():
+        return {"categories": [], "products": []}
+        
+    try:
+        # Đọc dữ liệu sản phẩm
+        df = pd.read_csv(products_path)
+        
+        # Lấy danh sách các danh mục (Categories) duy nhất
+        categories = df['category'].dropna().unique().tolist()
+        
+        products = df[['product_id', 'name', 'category', 'image_url', 'avg_rating']].fillna("").to_dict(orient="records")
+        
+        return {
+            "categories": categories,
+            "products": products
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi đọc dữ liệu sản phẩm: {e}")
 
 @app.get("/health", tags=["System"])
 async def health_check():
