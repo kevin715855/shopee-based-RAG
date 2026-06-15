@@ -30,8 +30,6 @@ from rag_pipeline.chunker import ReviewChunker
 
 DEFAULT_REVIEWS_FILE = "shopee/reviews"
 
-DEFAULT_REVIEWS_FILE = "shopee/reviews"
-
 # def load_reviews(filepath: str) -> list[dict]:
 #     """Đọc danh sách reviews từ file JSON."""
 #     path = Path(filepath)
@@ -158,7 +156,7 @@ def index_reviews(reviews: list[dict]) -> int:
     # ── Embed + Upsert vào Qdrant (đồng thời cập nhật BM25 corpus) ──────────
     print(f"Đang embed và upsert {len(chunk_dicts)} chunks vào Qdrant ...")
     store = get_store()
-    client = store.clientclient
+    client = store.client
     ids = store.add_chunks(chunk_dicts)
 
     # 4. Tạo PointStruct và upsert
