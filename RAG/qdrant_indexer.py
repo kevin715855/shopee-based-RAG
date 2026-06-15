@@ -18,10 +18,15 @@ Chạy:
 """
 
 import json
+import uuid
 import argparse
 from pathlib import Path
 
+from qdrant_client.models import PointStruct
+
 from rag_pipeline.config import COLLECTION_NAME
+from rag_pipeline import get_embedder, get_store
+from rag_pipeline.chunker import ReviewChunker
 
 DEFAULT_REVIEWS_FILE = "shopee/reviews"
 
@@ -142,6 +147,7 @@ def index_reviews(reviews: list[dict]) -> int:
     vectors = embedder.embed_documents(texts)
 
     # ── Chunk ───────────────────────────────────────────────────────────────
+    normalized = valid_reviews
     print(f"Đang chunk {len(normalized)} reviews ...")
     chunker = ReviewChunker()
     # product_id=0 → tìm toàn bộ (không filter theo internal product_id)
@@ -152,6 +158,7 @@ def index_reviews(reviews: list[dict]) -> int:
     # ── Embed + Upsert vào Qdrant (đồng thời cập nhật BM25 corpus) ──────────
     print(f"Đang embed và upsert {len(chunk_dicts)} chunks vào Qdrant ...")
     store = get_store()
+    client = store.clientclient
     ids = store.add_chunks(chunk_dicts)
 
     # 4. Tạo PointStruct và upsert
