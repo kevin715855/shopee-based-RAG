@@ -21,6 +21,7 @@ Luồng xử lý:
 """
 
 from __future__ import annotations
+import time
 from typing import Optional, AsyncGenerator
 
 from loguru import logger
@@ -96,6 +97,7 @@ class ReviewQAChain:
         logger.info(f"[Q&A] Câu hỏi: '{question}'")
 
         # Step 1: Hybrid search – dùng câu hỏi làm query
+        t = time.perf_counter()
         candidates = self.store.hybrid_search(
             query             = question,
             product_id        = product_id if product_id else None,
@@ -106,17 +108,20 @@ class ReviewQAChain:
             category          = category,   # ✅ pass category
             top_k             = RETRIEVAL_TOP_K,
         )
+        time_hybrid_s = time.perf_counter() - t
         logger.info(f"[Q&A] Hybrid search → {len(candidates)} candidates")
 
         if not candidates:
-            return self._no_data_response(question, product_name)
+            return self._no_data_response(question, product_name, time_hybrid_s=time_hybrid_s)
 
         # Step 2: Rerank – tìm reviews liên quan nhất với câu hỏi
+        t = time.perf_counter()
         top_docs = self.reranker.rerank(
             query     = question,
             documents = candidates,
             top_k     = RERANKER_TOP_K,
         )
+        time_rerank_s = time.perf_counter() - t
         logger.info(f"[Q&A] Reranked → top-{len(top_docs)}")
 
         # Kiểm tra relevance: nếu score cao nhất vẫn dưới ngưỡng →
@@ -130,6 +135,8 @@ class ReviewQAChain:
                 question, product_name,
                 candidates_retrieved=len(candidates),
                 best_rerank_score=best_score,   # ✅ Fix: truyền score thực tế
+                time_hybrid_s=time_hybrid_s,
+                time_rerank_s=time_rerank_s,
             )
 
         # Step 3: LLM trả lời
@@ -141,7 +148,9 @@ class ReviewQAChain:
             "review_count": len(used_docs),   # ✅ thêm số lượng reviews vào prompt header
         }
 
+        t = time.perf_counter()
         answer = self._chain.invoke(chain_input)
+        time_llm_s = time.perf_counter() - t
         logger.success(f"[Q&A] Trả lời xong ({len(answer)} ký tự)")
 
         return {
@@ -168,6 +177,10 @@ class ReviewQAChain:
                 "product_id":           product_id,
                 "shopee_product_id":    shopee_product_id,   # ✅ Added
                 "category_filter":      category,            # ✅ Added
+                "time_hybrid_s":        round(time_hybrid_s, 4),
+                "time_rerank_s":        round(time_rerank_s, 4),
+                "time_llm_s":           round(time_llm_s, 4),
+                "time_total_s":         round(time_hybrid_s + time_rerank_s + time_llm_s, 4),
             },
         }
 
@@ -226,6 +239,8 @@ class ReviewQAChain:
         product_name: str,
         candidates_retrieved: int = 0,      # ✅ Fix: nhận số candidates thực tế
         best_rerank_score: float = 0.0,     # ✅ Fix: nhận score thực tế
+        time_hybrid_s: float = 0.0,
+        time_rerank_s: float = 0.0,
     ) -> dict:
         """Trả về khi câu hỏi không liên quan đến reviews sản phẩm."""
         return {
@@ -240,11 +255,15 @@ class ReviewQAChain:
                 "candidates_retrieved": candidates_retrieved,   # ✅ Fix: giá trị thực
                 "rejected_reason":      "irrelevant_question",
                 "best_rerank_score":    round(best_rerank_score, 4),  # ✅ Fix: giá trị thực
+                "time_hybrid_s":        round(time_hybrid_s, 4),
+                "time_rerank_s":        round(time_rerank_s, 4),
+                "time_llm_s":           0.0,
+                "time_total_s":         round(time_hybrid_s + time_rerank_s, 4),
             },
         }
 
     @staticmethod
-    def _no_data_response(question: str, product_name: str) -> dict:
+    def _no_data_response(question: str, product_name: str, time_hybrid_s: float = 0.0) -> dict:
         return {
             "answer":   (
                 f"Xin lỗi, tôi không tìm thấy reviews nào liên quan đến câu hỏi "
@@ -253,7 +272,13 @@ class ReviewQAChain:
             ),
             "question":      question,
             "sources":       [],
-            "pipeline_meta": {"candidates_retrieved": 0},
+            "pipeline_meta": {
+                "candidates_retrieved": 0,
+                "time_hybrid_s":        round(time_hybrid_s, 4),
+                "time_rerank_s":        0.0,
+                "time_llm_s":           0.0,
+                "time_total_s":         round(time_hybrid_s, 4),
+            },
         }
 
 

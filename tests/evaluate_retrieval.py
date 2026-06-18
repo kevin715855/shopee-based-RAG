@@ -1,5 +1,6 @@
 import sys
 import json
+import time
 from pathlib import Path
 from loguru import logger
 
@@ -45,11 +46,17 @@ def compute_metrics(results_per_query: list[dict], top_ks: list[int] = [1, 5, 10
             failed.append(query)
 
     total = len(results_per_query)
+    latency_values = [
+        r["total_latency_s"]
+        for r in results_per_query
+        if "total_latency_s" in r
+    ]
     return {
         "total":   total,
         "hits":    hits,       # {1: count, 5: count, 10: count}
         "top_ks":  top_ks,
         "mrr":     mrr_sum / total if total else 0,
+        "avg_total_latency_s": sum(latency_values) / len(latency_values) if latency_values else 0,
         "failed":  failed,
     }
 
@@ -66,6 +73,7 @@ def print_report(title: str, m: dict):
         h = hits[k]
         print(f"  Hit Rate @ {k:<2}         : {h / total:.2%}  ({h}/{total})")
     print(f"  MRR                   : {m['mrr']:.4f}")
+    print(f"  Avg total latency     : {m['avg_total_latency_s']:.4f}s/query")
     print("=" * 58)
     if m["failed"]:
         max_k = max(top_ks)
@@ -113,36 +121,48 @@ def evaluate():
         pid      = str(item["product_id"])
 
         # ── Dense-only ───────────────────────────────────────────────────────
+        t = time.perf_counter()
         dense_docs = store.dense_search(query=query, top_k=10, shopee_product_id=pid)
+        dense_latency_s = time.perf_counter() - t
         dense_records.append({
             "query": query, "expected": expected,
             "ranked_ids": [str(d.get("review_id", "")) for d in dense_docs],
+            "total_latency_s": dense_latency_s,
         })
 
         # ── Sparse-only (BM25) ───────────────────────────────────────────────
+        t = time.perf_counter()
         sparse_docs = store.sparse_search(query=query, top_k=10, shopee_product_id=pid)
+        sparse_latency_s = time.perf_counter() - t
         sparse_records.append({
             "query": query, "expected": expected,
             "ranked_ids": [str(d.get("review_id", "")) for d in sparse_docs],
+            "total_latency_s": sparse_latency_s,
         })
 
         # ── Hybrid (Dense + BM25 via RRF), top 20 ───────────────────────────
+        t = time.perf_counter()
         candidates = store.hybrid_search(
             query=query, 
             top_k=20, 
             shopee_product_id=pid,
             alpha=0.5  # Thử nghiệm 0.5 Dense / 0.5 Sparse
         )
+        hybrid_latency_s = time.perf_counter() - t
         hybrid_records.append({
             "query": query, "expected": expected,
             "ranked_ids": [str(d.get("review_id", "")) for d in candidates[:10]],
+            "total_latency_s": hybrid_latency_s,
         })
 
         # ── Hybrid top 20 → Reranker top 10 ─────────────────────────────────
+        t = time.perf_counter()
         reranked = reranker.rerank(query=query, documents=candidates, top_k=10)
+        rerank_latency_s = time.perf_counter() - t
         reranked_records.append({
             "query": query, "expected": expected,
             "ranked_ids": [str(d.get("review_id", "")) for d in reranked],
+            "total_latency_s": hybrid_latency_s + rerank_latency_s,
         })
 
         if (idx + 1) % 10 == 0:
