@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackletterpress - Ngày hội Công nghệ Xanh 2026</title>
+    <style>
+        /* ================= RESET & BỐ CỤC CHUNG ================= */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Georgia, "Times New Roman", Times, serif;
+            background-color: #f7cb7b;
+            background-image: radial-gradient(#ffd98e 15%, transparent 16%), radial-gradient(#f1be62 15%, transparent 16%);
+            background-size: 8px 8px;
+            background-position: 0 0, 4px 4px;
+            color: #3b2314;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .container {
+            width: 960px;
+            margin: 0 auto;
+            padding: 15px 0 40px;
+        }
+
+        /* ================= HEADER ================= */
+        header.site-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 25px;
+            border-bottom: 2px solid rgba(139, 69, 19, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .header-logo-text {
+            font-family: "Old English Text MT", "Engravers Old English BT", serif;
+            font-size: 26px;
+            font-weight: bold;
+            color: #4a2810;
+        }
+
+        .main-logo {
+            font-family: "Old English Text MT", "Engravers Old English BT", serif;
+            font-size: 64px;
+            font-weight: bold;
+            color: #3a1a06;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .header-slogan {
+            font-style: italic;
+            font-size: 13px;
+            color: #53331b;
+            margin-bottom: 8px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+        }
+
+        .search-box input[type="text"] {
+            padding: 5px 8px;
+            border: 1px solid #aaa;
+            font-size: 13px;
+            width: 170px;
+            outline: none;
+            font-style: italic;
+        }
+
+        .btn-green {
+            background: linear-gradient(to bottom, #4ba34b, #1b631b);
+            color: #fff;
+            border: 1px solid #144914;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 2px;
+        }
+
+        .btn-green:hover {
+            background: linear-gradient(to bottom, #5cb85c, #257925);
+        }
+
+        /* ================= KHUNG NỘI DUNG ================= */
+        .content-wrapper {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        /* SIDEBAR TRÁI */
+        aside.sidebar {
+            width: 220px;
+            flex-shrink: 0;
+        }
+
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 25px;
+            background: #804000;
+            padding: 6px;
+            border-radius: 4px;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-menu li a {
+            display: block;
+            background: radial-gradient(circle, #2d0f04 0%, #150601 100%);
+            color: #fff;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border: 1px solid #5a260d;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+            border-radius: 2px;
+        }
+
+        .nav-menu li a:hover {
+            background: radial-gradient(circle, #4a1d0a 0%, #200a02 100%);
+        }
+
+        .connect-box,
+        .placeholder-box {
+            background: #e8a857;
+            border: 1px solid #c98839;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .box-title {
+            background: #cb842e;
+            color: #4a2505;
+            font-size: 15px;
+            font-weight: bold;
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #b67220;
+        }
+
+        .connect-icons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 12px;
+            background: #fff;
+        }
+
+        .connect-icons span {
+            display: inline-block;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .icon-tw {
+            color: #1da1f2;
+        }
+
+        .icon-fb {
+            color: #3b5998;
+        }
+
+        .icon-gp {
+            color: #dd4b39;
+        }
+
+        .placeholder-box {
+            padding: 12px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #49280d;
+        }
+
+        .placeholder-box .box-title {
+            margin: -12px -12px 12px -12px;
+        }
+
+        .sample-post {
+            margin-bottom: 15px;
+        }
+
+        .sample-post h4 {
+            font-size: 13px;
+            color: #552702;
+            margin-bottom: 4px;
+        }
+
+        .sample-post a.readmore {
+            color: #1a4f00;
+            text-decoration: underline;
+            display: block;
+            margin-top: 3px;
+        }
+
+        .btn-viewmore {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            background: linear-gradient(to bottom, #398c39, #135513);
+            color: #fff;
+            font-size: 15px;
+            font-weight: bold;
+            text-align: center;
+            border: 1px solid #0f430f;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            margin-top: 10px;
+        }
+
+        /* ================= VÙNG NỘI DUNG CHÍNH (MEDIA ARTICLE) ================= */
+        main.main-content {
+            flex-grow: 1;
+            background: #ffffff;
+            padding: 30px 45px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        article.event-article {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Tiêu đề & metadata */
+        .article-title {
+            color: #8c4217;
+            font-size: 28px;
+            font-weight: normal;
+            margin-bottom: 6px;
+        }
+
+        .article-meta {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .article-meta a {
+            color: #444;
+            text-decoration: underline;
+        }
+
+        /* Tiêu đề từng phần mục */
+        .section-heading {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2b1809;
+            margin: 15px 0 10px 0;
+        }
+
+        .article-section p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+            text-align: justify;
+        }
+
+        /* Hình ảnh & Figcaption */
+        figure.media-figure {
+            margin: 10px 0 15px 0;
+            text-align: center;
+        }
+
+        figure.media-figure img {
+            width: 100%;
+            max-height: 330px;
+            object-fit: cover;
+            display: block;
+            border: 1px solid #ddd;
+        }
+
+        figcaption {
+            font-size: 13px;
+            color: #333;
+            margin-top: 8px;
+            text-align: left;
+        }
+
+        /* Video */
+        .video-container {
+            width: 100%;
+            background: #000;
+        }
+
+        .video-container video {
+            width: 100%;
+            max-height: 330px;
+            display: block;
+            object-fit: cover;
+        }
+
+        /* Audio */
+        .audio-wrapper {
+            margin: 12px 0;
+        }
+
+        .audio-wrapper audio {
+            width: 280px;
+        }
+
+        /* Bản đồ Google Maps Iframe */
+        .map-container {
+            width: 100%;
+            height: 270px;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+        }
+
+        .map-container iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        /* Footer của bài viết: Tags */
+        .article-footer {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #444;
+        }
+
+        .article-footer a {
+            text-decoration: underline;
+            color: #333;
+        }
+
+        /* ================= FOOTER CHUNG ================= */
+        footer.site-footer {
+            border-top: 1px solid #ca9a55;
+            padding-top: 30px;
+        }
+
+        .footer-columns {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .footer-col {
+            flex: 1;
+            text-align: center;
+            font-size: 11px;
+            color: #43240e;
+            line-height: 1.5;
+        }
+
+        .footer-col .icon-circle {
+            width: 55px;
+            height: 55px;
+            background: #d89647;
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            color: #fff;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #d49f57;
+            padding-top: 15px;
+            text-align: center;
+            font-size: 11px;
+            color: #633c1f;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- SITE HEADER -->
+        <header class="site-header">
+            <div class="header-logo-text">Blackletterpress</div>
+            <div class="main-logo">BLP</div>
+            <div class="header-right">
+                <div class="header-slogan">Your online source of trusted news</div>
+                <form class="search-box" action="#" method="get">
+                    <input type="text" placeholder="Enter search query">
+                    <button type="submit" class="btn-green">Search</button>
+                </form>
+            </div>
+        </header>
+
+        <!-- CONTENT WRAPPER -->
+        <div class="content-wrapper">
+            <!-- SIDEBAR TRÁI -->
+            <aside class="sidebar">
+                <ul class="nav-menu">
+                    <li><a href="index.html">HOME</a></li>
+                    <li><a href="about.html">ABOUT</a></li>
+                    <li><a href="news.html">NEWS</a></li>
+                    <li><a href="blog.html">BLOG</a></li>
+                </ul>
+
+                <div class="connect-box">
+                    <div class="box-title">Connect with us:</div>
+                    <div class="connect-icons">
+                        <span class="icon-tw">&#x1F426;</span>
+                        <span class="icon-fb"><b>f</b></span>
+                        <span class="icon-gp"><b>g+</b></span>
+                    </div>
+                </div>
+
+                <div class="placeholder-box">
+                    <div class="box-title">Placeholder</div>
+                    <div class="sample-post">
+                        <h4>Title Sample One</h4>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec eleifend ligula vel velit
+                            varius</p>
+                        <a href="#" class="readmore">Read more</a>
+                    </div>
+                    <div class="sample-post">
+                        <h4>Title Sample One</h4>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec eleifend ligula vel velit
+                            varius</p>
+                        <a href="#" class="readmore">Read more</a>
+                    </div>
+                    <button type="button" class="btn-viewmore">View More</button>
+                </div>
+            </aside>
+
+            <!-- MAIN CONTENT: NỘI DUNG ĐA PHƯƠNG TIỆN -->
+            <main class="main-content">
+                <article class="event-article">
+                    <!-- Tiêu đề và tác giả bài viết -->
+                    <header>
+                        <h1 class="article-title">Ngày hội Công nghệ Xanh 2026</h1>
+                        <div class="article-meta">
+                            <time datetime="2026-04-22">22/04/2026</time> &middot; Tác giả:
+                            <a href="#">Ban tổ chức Blakletterpress</a>
+                        </div>
+                    </header>
+
+                    <!-- Ảnh mở đầu sự kiện -->
+                    <figure class="media-figure">
+                        <img src="https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80"
+                            alt="Hội trường khai mạc sự kiện">
+                        <figcaption>Hội trường chính trong ngày khai mạc sự kiện năm 2025.</figcaption>
+                    </figure>
+
+                    <!-- Phần 1: Giới thiệu sự kiện -->
+                    <section class="article-section">
+                        <h2 class="section-heading">Giới thiệu sự kiện</h2>
+                        <p>
+                            Ngày hội Công nghệ Xanh 2026 quy tụ các diễn giả và doanh nghiệp theo đuổi giải pháp công
+                            nghệ bền vững. Sự kiện gồm chuỗi tọa đàm, khu trưng bày sản phẩm và các buổi kết nối dành
+                            cho sinh viên.
+                        </p>
+                    </section>
+
+                    <!-- Phần 2: Video giới thiệu -->
+                    <section class="article-section">
+                        <h2 class="section-heading">Video giới thiệu</h2>
+                        <div class="video-container">
+                            <video controls
+                                poster="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80">
+                                <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+                                Trình duyệt của bạn không hỗ trợ thẻ video HTML5.
+                            </video>
+                        </div>
+                    </section>
+
+                    <!-- Phần 3: Podcast Audio -->
+                    <section class="article-section">
+                        <h2 class="section-heading">Podcast: Trò chuyện cùng diễn giả</h2>
+                        <p>Nghe lại buổi phỏng vấn khách mời chính của chương trình:</p>
+                        <div class="audio-wrapper">
+                            <audio controls>
+                                <source src="https://www.w3schools.com/html/horse.mp3" type="audio/mpeg">
+                                Trình duyệt của bạn không hỗ trợ thẻ audio HTML5.
+                            </audio>
+                        </div>
+                    </section>
+
+                    <!-- Phần 4: Địa điểm tổ chức & Bản đồ -->
+                    <section class="article-section">
+                        <h2 class="section-heading">Địa điểm tổ chức</h2>
+                        <p>Sự kiện diễn ra tại Hà Nội. Xem bản đồ đường đi bên dưới:</p>
+                        <div class="map-container">
+                            <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d238240.23122964893!2d105.69573934371513!3d21.028511000000004!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ab9bd8161725%3A0x10ac33f7c464479b!2zSMOgIE7hu5lpLCBWaeG7h3QgTmFt!5e0!3m2!1svi!2s!4v1710000000000"
+                                allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+                            </iframe>
+                        </div>
+                    </section>
+
+                    <!-- Phần 5: Hình ảnh các mùa trước -->
+                    <section class="article-section">
+                        <h2 class="section-heading">Hình ảnh các mùa trước</h2>
+                        <figure class="media-figure">
+                            <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80"
+                                alt="Khu trưng bày sản phẩm xanh">
+                            <figcaption>Khu trưng bày sản phẩm xanh mùa 2025.</figcaption>
+                        </figure>
+                    </section>
+
+                    <!-- Thẻ tag / Phân loại ở cuối bài viết -->
+                    <footer class="article-footer">
+                        Chủ đề: <a href="#">công nghệ xanh</a>, <a href="#">phát triển bền vững</a>.
+                    </footer>
+                </article>
+            </main>
+        </div>
+
+        <!-- SITE FOOTER -->
+        <footer class="site-footer">
+            <div class="footer-columns">
+                <div class="footer-col">
+                    <div class="icon-circle">&#x2302;</div>
+                    <p>This website template has been designed by Free Website Templates for you, for free. You can
+                        replace all this text with your own text. Lorem ipsum dolor sit amet, consectetur adipiscing
+                        elit, sed diam nonummy nibh euismod</p>
+                </div>
+                <div class="footer-col">
+                    <div class="icon-circle">&#x1F514;</div>
+                    <p>This website template has been designed by Free Website Templates for you, for free. You can
+                        replace all this text with your own text. Lorem ipsum dolor sit amet, consectetur adipiscing
+                        elit, sed diam nonummy nibh euismod</p>
+                </div>
+                <div class="footer-col">
+                    <div class="icon-circle">&#x1F310;</div>
+                    <p>This website template has been designed by Free Website Templates for you, for free. You can
+                        replace all this text with your own text. Lorem ipsum dolor sit amet, consectetur adipiscing
+                        elit, sed diam nonummy nibh euismod</p>
+                </div>
+                <div class="footer-col">
+                    <div class="icon-circle">&#x270E;</div>
+                    <p>This website template has been designed by Free Website Templates for you, for free. You can
+                        replace all this text with your own text. Lorem ipsum dolor sit amet, consectetur adipiscing
+                        elit, sed diam nonummy nibh euismod</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; Copyright &copy; 2011.Company name all rights reserved
+            </div>
+        </footer>
+    </div>
+
+</body>
+
+</html>

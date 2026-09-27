@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackletterpress - Đăng ký nhận thông tin</title>
+    <style>
+        /* ================= RESET & TỔNG THỂ ================= */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Georgia, "Times New Roman", Times, serif;
+            background-color: #f7cb7b;
+            background-image: radial-gradient(#ffd98e 15%, transparent 16%), radial-gradient(#f1be62 15%, transparent 16%);
+            background-size: 8px 8px;
+            background-position: 0 0, 4px 4px;
+            color: #3b2314;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .container {
+            width: 960px;
+            margin: 0 auto;
+            padding: 15px 0 40px;
+        }
+
+        /* ================= HEADER ================= */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 25px;
+            border-bottom: 2px solid rgba(139, 69, 19, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .header-logo-text {
+            font-family: "Old English Text MT", "Engravers Old English BT", serif;
+            font-size: 26px;
+            font-weight: bold;
+            color: #4a2810;
+        }
+
+        .main-logo {
+            font-family: "Old English Text MT", "Engravers Old English BT", serif;
+            font-size: 64px;
+            font-weight: bold;
+            color: #3a1a06;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .header-slogan {
+            font-style: italic;
+            font-size: 13px;
+            color: #53331b;
+            margin-bottom: 8px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+        }
+
+        .search-box input[type="text"] {
+            padding: 5px 8px;
+            border: 1px solid #aaa;
+            font-size: 13px;
+            width: 170px;
+            outline: none;
+            font-style: italic;
+        }
+
+        .btn-green {
+            background: linear-gradient(to bottom, #4ba34b, #1b631b);
+            color: #fff;
+            border: 1px solid #144914;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 2px;
+        }
+
+        .btn-green:hover {
+            background: linear-gradient(to bottom, #5cb85c, #257925);
+        }
+
+        /* ================= BỐ CỤC NỘI DUNG CHÍNH ================= */
+        .content-wrapper {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        /* SIDEBAR TRÁI */
+        aside.sidebar {
+            width: 220px;
+            flex-shrink: 0;
+        }
+
+        /* Menu */
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 25px;
+            background: #804000;
+            padding: 6px;
+            border-radius: 4px;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-menu li a {
+            display: block;
+            background: radial-gradient(circle, #2d0f04 0%, #150601 100%);
+            color: #fff;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border: 1px solid #5a260d;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+            border-radius: 2px;
+        }
+
+        .nav-menu li a:hover {
+            background: radial-gradient(circle, #4a1d0a 0%, #200a02 100%);
+        }
+
+        /* Khối connect with us */
+        .connect-box,
+        .placeholder-box {
+            background: #e8a857;
+            border: 1px solid #c98839;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .box-title {
+            background: #cb842e;
+            color: #4a2505;
+            font-size: 15px;
+            font-weight: bold;
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #b67220;
+        }
+
+        .connect-icons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 12px;
+            background: #fff;
+        }
+
+        .connect-icons span {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 20px;
+            font-size: 14px;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+
+        .icon-tw {
+            color: #1da1f2;
+        }
+
+        .icon-fb {
+            color: #3b5998;
+        }
+
+        .icon-gp {
+            color: #dd4b39;
+        }
+
+        /* Khối placeholder */
+        .placeholder-box {
+            padding: 12px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #49280d;
+        }
+
+        .placeholder-box .box-title {
+            margin: -12px -12px 12px -12px;
+        }
+
+        .sample-post {
+            margin-bottom: 15px;
+        }
+
+        .sample-post h4 {
+            font-size: 13px;
+            color: #552702;
+            margin-bottom: 4px;
+        }
+
+        .sample-post a.readmore {
+            color: #1a4f00;
+            text-decoration: underline;
+            display: block;
+            margin-top: 3px;
+        }
+
+        .btn-viewmore {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            background: linear-gradient(to bottom, #398c39, #135513);
+            color: #fff;
+            font-size: 15px;
+            font-weight: bold;
+            text-align: center;
+            border: 1px solid #0f430f;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            margin-top: 10px;
+        }
+
+        /* ================= VÙNG NỘI DUNG CHÍNH (FORM) ================= */
+        main.main-content {
+            flex-grow: 1;
+            background: #ffffff;
+            padding: 30px 40px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            min-height: 600px;
+        }
+
+        .page-title {
+            color: #8c4217;
+            font-size: 26px;
+            font-weight: normal;
+            margin-bottom: 12px;
+        }
+
+        .page-desc {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 25px;
+        }
+
+        /* Fieldset & Legend */
+        fieldset {
+            border: 1px solid #b5b5b5;
+            padding: 15px 20px 20px;
+            margin-bottom: 20px;
+            border-radius: 2px;
+        }
+
+        legend {
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+            padding: 0 6px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        /* Inputs */
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="tel"],
+        input[type="date"],
+        input[type="number"],
+        select,
+        textarea {
+            border: 1px solid #7f9db9;
+            padding: 4px 6px;
+            font-family: inherit;
+            font-size: 13px;
+            color: #333;
+            outline: none;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="tel"] {
+            width: 280px;
+        }
+
+        input[type="number"] {
+            width: 80px;
+        }
+
+        select {
+            width: 160px;
+        }
+
+        textarea {
+            width: 320px;
+            height: 70px;
+            resize: vertical;
+        }
+
+        /* Checkbox & Radio inline */
+        .options-inline {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .options-inline label {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            margin-bottom: 0;
+        }
+
+        .checkbox-agreement {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            margin-top: 15px;
+        }
+
+        .form-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 6px;
+        }
+
+        .form-actions button {
+            background: linear-gradient(to bottom, #398c39, #1a581a);
+            color: #fff;
+            border: 1px solid #0f400f;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 2px;
+        }
+
+        .form-actions button:hover {
+            background: linear-gradient(to bottom, #459e45, #226f22);
+        }
+
+        /* ================= FOOTER ================= */
+        footer {
+            border-top: 1px solid #ca9a55;
+            padding-top: 30px;
+        }
+
+        .footer-columns {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .footer-col {
+            flex: 1;
+            text-align: center;
+            font-size: 11px;
+            color: #43240e;
+            line-height: 1.5;
+        }
+
+        .footer-col .icon-circle {
+            width: 55px;
+            height: 55px;
+            background: #d89647;
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            color: #fff;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #d49f57;
+            padding-top: 15px;
+            text-align: center;
+            font-size: 11px;
+            color: #633c1f;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- HEADER -->
+        <header>
+            <div class="header-logo-text">Blackletterpress</div>
+            <div class="main-logo">BLP</div>
+            <div class="header-right">
+                <div class="header-slogan">Your online source of trusted news</div>
+                <form class="search-box" action="#" method="get">
+                    <input type="text" placeholder="Enter search query">
+                    <button type="submit" class="btn-green">Search</button>
+                </form>
+            </div>
+        </header>
+
+        <!-- CONTENT WRAPPER -->
+        <div class="content-wrapper">
+            <!-- SIDEBAR TRÁI -->
+            <aside class="sidebar">
+                <ul class="nav-menu">
+                    <li><a href="index.html">HOME</a></li>
+                    <li><a href="about.html">ABOUT</a></li>
+                    <li><a href="news.html">NEWS</a></li>
+                    <li><a href="blog.html">BLOG</a></li>
+                </ul>
+
+                <div class="connect-box">
+                    <div class="box-title">Connect with us:</div>
+                    <div class="connect-icons">
+                        <span class="icon-tw">&#x1F426;</span>
+                        <span class="icon-fb"><b>f</b></span>
+                        <span class="icon-gp"><b>g+</b></span>
+                    </div>
+                </div>
+
+                <div class="placeholder-box">
+                    <div class="box-title">Placeholder</div>
+                    <div class="sample-post">
+                        <h4>Title Sample One</h4>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec eleifend ligula vel velit
+                            varius</p>
+                        <a href="#" class="readmore">Read more</a>
+                    </div>
+                    <div class="sample-post">
+                        <h4>Title Sample One</h4>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec eleifend ligula vel velit
+                            varius</p>
+                        <a href="#" class="readmore">Read more</a>
+                    </div>
+                    <button type="button" class="btn-viewmore">View More</button>
+                </div>
+            </aside>
+
+            <!-- MAIN CONTENT (FORM ĐĂNG KÝ) -->
+            <main class="main-content">
+                <h1 class="page-title">Đăng ký nhận thông tin</h1>
+                <p class="page-desc">Điền thông tin bên dưới để nhận bản tin định kỳ. Các trường có dấu * là bắt buộc.
+                </p>
+
+                <form action="" method="post">
+                    <!-- Fieldset 1: Thông tin tài khoản -->
+                    <fieldset>
+                        <legend>Thông tin tài khoản</legend>
+
+                        <div class="form-group">
+                            <label for="fullname">Họ và tên *</label>
+                            <input type="text" id="fullname" name="fullname" placeholder="Nguyễn Văn A" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email *</label>
+                            <input type="email" id="email" name="email" placeholder="ban@example.com" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Mật khẩu * (tối thiểu 8 ký tự)</label>
+                            <input type="password" id="password" name="password" minlength="8" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">Số điện thoại * (10 số, bắt đầu bằng 0)</label>
+                            <input type="tel" id="phone" name="phone" pattern="0[0-9]{9}"
+                                title="Vui lòng nhập 10 chữ số bắt đầu bằng 0" required>
+                        </div>
+                    </fieldset>
+
+                    <!-- Fieldset 2: Thông tin cá nhân -->
+                    <fieldset>
+                        <legend>Thông tin cá nhân</legend>
+
+                        <div class="form-group">
+                            <label for="dob">Ngày sinh *</label>
+                            <input type="date" id="dob" name="dob" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="age">Độ tuổi *</label>
+                            <input type="number" id="age" name="age" min="1" max="120" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Giới tính *</label>
+                            <div class="options-inline">
+                                <label><input type="radio" name="gender" value="nam" required> Nam</label>
+                                <label><input type="radio" name="gender" value="nu"> Nữ</label>
+                                <label><input type="radio" name="gender" value="khac"> Khác</label>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Fieldset 3: Tuỳ chọn nhận tin -->
+                    <fieldset>
+                        <legend>Tuỳ chọn nhận tin</legend>
+
+                        <div class="form-group">
+                            <label>Chủ đề quan tâm</label>
+                            <div class="options-inline">
+                                <label><input type="checkbox" name="topic" value="tin-tuc"> Tin tức</label>
+                                <label><input type="checkbox" name="topic" value="blog"> Blog</label>
+                                <label><input type="checkbox" name="topic" value="su-kien"> Sự kiện</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="region">Khu vực</label>
+                            <select id="region" name="region">
+                                <option value="">-- Chọn khu vực --</option>
+                                <option value="mien-bac">Miền Bắc</option>
+                                <option value="mien-trung">Miền Trung</option>
+                                <option value="mien-nam">Miền Nam</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="message">Lời nhắn</label>
+                            <textarea id="message" name="message" placeholder="Bạn muốn nhận nội dung gì?"></textarea>
+                        </div>
+
+                        <div class="checkbox-agreement">
+                            <input type="checkbox" id="terms" name="terms" required>
+                            <label for="terms">Tôi đồng ý với điều khoản sử dụng *</label>
+                        </div>
+                    </fieldset>
+
+                    <!-- Nút thao tác -->
+                    <div class="form-actions">
+                        <button type="submit">Đăng ký</button>
+                        <button type="reset">Nhập lại</button>
+                    </div>
+                </form>
+            </main>
+        </div>
+
+        <!-- FOOTER -->
+        <footer>
+            <div class="footer-columns">
+                <div class="footer-col">
+                    <div class="icon-circle">&#x2302;</div>
+                    <p>This website template has been designed by Free Website Templates for you, for free. You can
+                        replace all this text with your own text. Lorem ipsum dolor sit amet, consectetur adipiscing
+                        elit, sed diam nonummy nibh euismod</p>
+                </div>
+                <div class="footer-col">
+                    <div class="icon-circle">&#x1F514;</div>
+                    <p>This website template has been designed by Free Website Templates for you, for free. You can
+                        replace all this text with your own text. Lorem ipsum dolor sit amet, consectetur adipiscing
+                        elit, sed diam nonummy nibh euismod</p>
+                </div>
+                <div class="footer-col">
+                    <div class="icon-circle">&#x1F310;</div>
+                    <p>This website template has been designed by Free Website Templates for you, for free. You can
+                        replace all this text with your own text. Lorem ipsum dolor sit amet, consectetur adipiscing
+                        elit, sed diam nonummy nibh euismod</p>
+                </div>
+                <div class="footer-col">
+                    <div class="icon-circle">&#x270E;</div>
+                    <p>This website template has been designed by Free Website Templates for you, for free. You can
+                        replace all this text with your own text. Lorem ipsum dolor sit amet, consectetur adipiscing
+                        elit, sed diam nonummy nibh euismod</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; Copyright &copy; 2011.Company name all rights reserved
+            </div>
+        </footer>
+    </div>
+
+</body>
+
+</html>
